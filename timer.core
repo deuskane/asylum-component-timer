@@ -14,6 +14,7 @@ CAPI=2:
 # Revisions  :
 # Date        Version  Author   Description
 # 2021-10-26  1.0.0    mrosiere Created
+# 2021-11-20  1.1.0    mrosiere Fix timer_event_r clear condition
 #-----------------------------------------------------------------------------
 
 name : asylum:component:timer:1.0.0

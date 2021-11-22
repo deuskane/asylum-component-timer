@@ -6,14 +6,14 @@
 -- Author     : Mathieu Rosiere
 -- Company    : 
 -- Created    : 2017-04-12
--- Last update: 2018-06-01
+-- Last update: 2021-11-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -- Register Map :
 -- [0] R     : Status
---             b0 Timer Event  (reset on reset)
+--             b0 Timer Event  (reset on read)
 -- [1] R/W   : Control
 --             b0 Timer Enable (start/stop)
 --             b1 Autostart after Event
@@ -30,6 +30,7 @@
 -------------------------------------------------------------------------------
 -- Revisions  :
 -- Date       Version Author   Description
+-- 2021-11-20 1.2     mrosiere Fix timer_event_r clear condition	
 -- 2018-06-01 1.1     mrosiere Move Event in dedicated register	
 -- 2017-04-12 1.0     mrosiere Created
 -------------------------------------------------------------------------------
@@ -256,7 +257,7 @@ begin  -- architecture rtl
         end if;
 
         -- User Read
-        if (cs_i = '1' and we_i = '0')
+        if (cs_i = '1' and re_i = '1')
         then
           if (addr_i = raddr_status)
           then

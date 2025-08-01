@@ -27,7 +27,7 @@ filesets:
   #---------------------------------------
   files_hdl:
     files     :
-      - src/timer.vhd
+      - hdl/timer.vhd
     file_type : vhdlSource
       
   #---------------------------------------

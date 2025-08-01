@@ -26,7 +26,7 @@ filesets:
   #---------------------------------------
   files_hdl:
     files:
-      - src/pbi_timer.vhd
+      - hdl/pbi_timer.vhd
     file_type : vhdlSource
     depend :
       - ">=asylum:component:pbi_wrapper_target:1.0.0"

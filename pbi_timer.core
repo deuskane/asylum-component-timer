@@ -14,9 +14,10 @@ CAPI=2:
 # Revisions  :
 # Date        Version  Author   Description
 # 2021-10-26  1.0.0    mrosiere Created
+# 2025-09-05  1.0.1    mrosiere Add Package
 #-----------------------------------------------------------------------------
 
-name : asylum:component:pbi_timer:1.0.0
+name        : asylum:component:pbi_timer:1.0.0
 description : PBI Generic wrapper for target IP
 
 filesets:
@@ -26,6 +27,7 @@ filesets:
   #---------------------------------------
   files_hdl:
     files:
+      - hdl/timer_pkg.vhd
       - hdl/pbi_timer.vhd
     file_type : vhdlSource
     depend :

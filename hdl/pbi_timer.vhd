@@ -6,7 +6,7 @@
 -- Author     : Mathieu Rosiere
 -- Company    : 
 -- Created    : 2017-04-26
--- Last update: 2017-04-28
+-- Last update: 2025-09-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -20,9 +20,12 @@
 -------------------------------------------------------------------------------
 
 library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.numeric_std.ALL;
-use work.pbi_pkg.all;
+use     IEEE.STD_LOGIC_1164.ALL;
+use     IEEE.numeric_std.ALL;
+library work;
+use     work.pbi_pkg.all;
+use     work.timer_pkg.all;
+use     work.pbi_wrapper_target_pkg.all;
 
 entity pbi_timer is
   generic(
@@ -61,7 +64,7 @@ architecture rtl of pbi_timer is
 
 begin  -- architecture rtl
 
-  ins_pbi_wrapper_target : entity work.pbi_wrapper_target(rtl)
+  ins_pbi_wrapper_target : pbi_wrapper_target
   generic map(
     SIZE_DATA      => PBI_DATA_WIDTH,
     SIZE_ADDR_IP   => SIZE_ADDR_IP  ,
@@ -82,7 +85,7 @@ begin  -- architecture rtl
     pbi_tgt_o      => pbi_tgt_o     
     );
 
-  ins_timer : entity work.timer(rtl)
+  ins_timer : timer
   generic map(
 --  FSYS             => FSYS          ,
 --  TICK_PERIOD      => TICK_PERIOD   ,

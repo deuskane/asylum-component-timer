@@ -6,7 +6,7 @@
 -- Author     : mrosiere
 -- Company    : 
 -- Created    : 2016-11-11
--- Last update: 2021-08-29
+-- Last update: 2025-09-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -23,13 +23,11 @@ library std;
 use std.textio.all;
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
---use ieee.numeric_bit.all;
---use ieee.std_logic_arith.all;
+use     ieee.std_logic_1164.all;
+use     ieee.numeric_std.all;
 
 library work;
---use work.timer_pkg.all;
+use     work.timer_pkg.all;
 
 entity tb_timer is
 
@@ -94,7 +92,7 @@ begin
   ------------------------------------------------
   -- Instance of DUT
   ------------------------------------------------
-  dut : entity work.timer(rtl)
+  dut : timer
   generic map
   (
     TICK             => positive(real(FSYS)*TICK_PERIOD)

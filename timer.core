@@ -56,7 +56,7 @@ targets:
     toplevel        : timer
     default_tool    : ghdl
 
-  sim:
+  sim_basic:
     << : *default
     description     : Simulation of all cases
     filesets_append :

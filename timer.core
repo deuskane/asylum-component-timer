@@ -27,12 +27,13 @@ filesets:
   # Source Files
   #---------------------------------------
   files_hdl:
-    files     :
+    files        :
       - hdl/timer_pkg.vhd
       - hdl/pbi_timer.vhd
       - hdl/timer.vhd
-    file_type : vhdlSource
-    depend :
+    file_type    : vhdlSource
+    logical_name : asylum
+    depend       :
       - ">=asylum:component:pbi_wrapper_target:1.0.0"
       
   #---------------------------------------

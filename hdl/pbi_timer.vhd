@@ -22,10 +22,10 @@
 library IEEE;
 use     IEEE.STD_LOGIC_1164.ALL;
 use     IEEE.numeric_std.ALL;
-library work;
-use     work.pbi_pkg.all;
-use     work.timer_pkg.all;
-use     work.pbi_wrapper_target_pkg.all;
+library asylum;
+use     asylum.pbi_pkg.all;
+use     asylum.timer_pkg.all;
+use     asylum.pbi_wrapper_target_pkg.all;
 
 entity pbi_timer is
   generic(

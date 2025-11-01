@@ -81,22 +81,23 @@ architecture rtl of timer_registers is
   signal   imr_rdata_hw  : std_logic_vector(1-1 downto 0);
   signal   imr_rbusy     : std_logic;
 
-  constant INIT_control : std_logic_vector(2-1 downto 0) :=
-             "0" -- enable
+  constant INIT_control : std_logic_vector(3-1 downto 0) :=
+             "1" -- clear
+           & "0" -- enable
            & "0" -- autostart
            ;
   signal   control_wcs       : std_logic;
   signal   control_we        : std_logic;
   signal   control_wdata     : std_logic_vector(8-1 downto 0);
-  signal   control_wdata_sw  : std_logic_vector(2-1 downto 0);
-  signal   control_wdata_hw  : std_logic_vector(2-1 downto 0);
+  signal   control_wdata_sw  : std_logic_vector(3-1 downto 0);
+  signal   control_wdata_hw  : std_logic_vector(3-1 downto 0);
   signal   control_wbusy     : std_logic;
 
   signal   control_rcs       : std_logic;
   signal   control_re        : std_logic;
   signal   control_rdata     : std_logic_vector(8-1 downto 0);
-  signal   control_rdata_sw  : std_logic_vector(2-1 downto 0);
-  signal   control_rdata_hw  : std_logic_vector(2-1 downto 0);
+  signal   control_rdata_sw  : std_logic_vector(3-1 downto 0);
+  signal   control_rdata_hw  : std_logic_vector(3-1 downto 0);
   signal   control_rbusy     : std_logic;
 
   constant INIT_timer_byte0 : std_logic_vector(8-1 downto 0) :=
@@ -324,11 +325,17 @@ begin  -- architecture rtl
   -- Register    : control
   -- Description : Control Timer
   -- Address     : 0x2
-  -- Width       : 2
+  -- Width       : 3
   -- Sw Access   : rw
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
+  --==================================
+  -- Field       : clear
+  -- Description : Reset Timer : 0 disable, 1 enable
+  -- Width       : 1
+  --==================================
+
   --==================================
   -- Field       : enable
   -- Description : Time Enable : 0 disable, 1 enable
@@ -345,21 +352,24 @@ begin  -- architecture rtl
     control_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(2,timer_ADDR_WIDTH))) else '0';
     control_re      <= sig_rcs and sig_re and control_rcs;
     control_rdata   <= (
-      0 => control_rdata_sw(0), -- enable(0)
-      1 => control_rdata_sw(1), -- autostart(0)
+      0 => control_rdata_sw(0), -- clear(0)
+      1 => control_rdata_sw(1), -- enable(0)
+      2 => control_rdata_sw(2), -- autostart(0)
       others => '0');
 
     control_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(2,timer_ADDR_WIDTH)))   else '0';
     control_we      <= sig_wcs and sig_we and control_wcs;
     control_wdata   <= sig_wdata;
-    control_wdata_sw(0 downto 0) <= control_wdata(0 downto 0); -- enable
-    control_wdata_sw(1 downto 1) <= control_wdata(1 downto 1); -- autostart
-    sw2hw_o.control.enable <= control_rdata_hw(0 downto 0); -- enable
-    sw2hw_o.control.autostart <= control_rdata_hw(1 downto 1); -- autostart
+    control_wdata_sw(0 downto 0) <= control_wdata(0 downto 0); -- clear
+    control_wdata_sw(1 downto 1) <= control_wdata(1 downto 1); -- enable
+    control_wdata_sw(2 downto 2) <= control_wdata(2 downto 2); -- autostart
+    sw2hw_o.control.clear <= control_rdata_hw(0 downto 0); -- clear
+    sw2hw_o.control.enable <= control_rdata_hw(1 downto 1); -- enable
+    sw2hw_o.control.autostart <= control_rdata_hw(2 downto 2); -- autostart
 
     ins_control : csr_reg
       generic map
-        (WIDTH         => 2
+        (WIDTH         => 3
         ,INIT          => INIT_control
         ,MODEL         => "rw"
         )
@@ -388,6 +398,7 @@ begin  -- architecture rtl
     control_rdata   <= (others => '0');
     control_wcs      <= '0';
     control_wbusy    <= '0';
+    sw2hw_o.control.clear <= "1";
     sw2hw_o.control.enable <= "0";
     sw2hw_o.control.autostart <= "0";
     sw2hw_o.control.re <= '0';

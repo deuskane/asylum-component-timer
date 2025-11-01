@@ -53,14 +53,20 @@
             hwaccess   : "ro",
             fields: [
                 {
-                    name: "enable",
+                    name: "clear",
                     bits: "0",
+                    init: "d1",
+                    desc: "Reset Timer : 0 disable, 1 enable"
+                },
+                {
+                    name: "enable",
+                    bits: "1",
                     init: "d0",
                     desc: "Time Enable : 0 disable, 1 enable"
                 },
                 {
                     name: "autostart",
-                    bits: "1",
+                    bits: "2",
                     init: "d0",
                     desc: "Time autostart after evant : 0 disable, 1 enable"
                 },

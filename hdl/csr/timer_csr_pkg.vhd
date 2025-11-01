@@ -68,7 +68,7 @@ package timer_csr_pkg is
   -- Register    : control
   -- Description : Control Timer
   -- Address     : 0x2
-  -- Width       : 2
+  -- Width       : 3
   -- Sw Access   : rw
   -- Hw Access   : ro
   -- Hw Type     : reg
@@ -76,6 +76,12 @@ package timer_csr_pkg is
   type timer_control_sw2hw_t is record
     re : std_logic;
     we : std_logic;
+  --==================================
+  -- Field       : clear
+  -- Description : Reset Timer : 0 disable, 1 enable
+  -- Width       : 1
+  --==================================
+    clear : std_logic_vector(1-1 downto 0);
   --==================================
   -- Field       : enable
   -- Description : Time Enable : 0 disable, 1 enable

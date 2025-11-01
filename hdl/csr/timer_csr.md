@@ -26,10 +26,13 @@ Interruption Mask Register
 ## 0x2 control
 Control Timer
 
-### [0:0] enable
+### [0:0] clear
+Reset Timer : 0 disable, 1 enable
+
+### [1:1] enable
 Time Enable : 0 disable, 1 enable
 
-### [1:1] autostart
+### [2:2] autostart
 Time autostart after evant : 0 disable, 1 enable
 
 ## 0x4 timer_byte0

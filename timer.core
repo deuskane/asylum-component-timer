@@ -47,7 +47,7 @@ filesets:
     files        :
       - hdl/timer_pkg.vhd
       - hdl/pbi_timer.vhd
-      - hdl/timer.vhd
+      - hdl/timer_core.vhd
       - hdl/timer_v1.vhd
     file_type    : vhdlSource
     logical_name : asylum

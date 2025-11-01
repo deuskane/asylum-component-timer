@@ -40,16 +40,22 @@
 //==================================
 #define TIMER_CONTROL 0x2
 
+// Field       : control.clear
+// Description : Reset Timer : 0 disable, 1 enable
+// Range       : [0]
+#define TIMER_CONTROL_CLEAR      0
+#define TIMER_CONTROL_CLEAR_MASK 1
+
 // Field       : control.enable
 // Description : Time Enable : 0 disable, 1 enable
-// Range       : [0]
-#define TIMER_CONTROL_ENABLE      0
+// Range       : [1]
+#define TIMER_CONTROL_ENABLE      1
 #define TIMER_CONTROL_ENABLE_MASK 1
 
 // Field       : control.autostart
 // Description : Time autostart after evant : 0 disable, 1 enable
-// Range       : [1]
-#define TIMER_CONTROL_AUTOSTART      1
+// Range       : [2]
+#define TIMER_CONTROL_AUTOSTART      2
 #define TIMER_CONTROL_AUTOSTART_MASK 1
 
 //==================================

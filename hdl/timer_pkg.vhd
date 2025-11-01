@@ -6,7 +6,7 @@ use     asylum.pbi_pkg.all;
 
 package timer_pkg is
 -- [COMPONENT_INSERT][BEGIN]
-component timer is
+component timer_v1 is
   generic(
 --  FSYS             : positive := 50_000_000;
 --  TICK_PERIOD      : real     := 0.001; -- 1ms
@@ -35,7 +35,7 @@ component timer is
     interrupt_ack_i  : in    std_logic
     );
 
-end component timer;
+end component timer_v1;
 
 component pbi_timer is
   generic(

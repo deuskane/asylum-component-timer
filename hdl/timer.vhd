@@ -6,7 +6,7 @@
 -- Author     : Mathieu Rosiere
 -- Company    : 
 -- Created    : 2017-04-12
--- Last update: 2025-11-01
+-- Last update: 2021-11-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.ALL;
 
-entity timer_v1 is
+entity timer is
   generic(
 --  FSYS             : positive := 50_000_000;
 --  TICK_PERIOD      : real     := 0.001; -- 1ms
@@ -68,9 +68,9 @@ entity timer_v1 is
     interrupt_ack_i  : in    std_logic
     );
 
-end entity timer_v1;
+end entity timer;
 
-architecture rtl of timer_v1 is
+architecture rtl of timer is
   constant CST0 : std_logic_vector(1024-1 downto 0) := (others => '0');
 --constant TICK : positive := positive(real(FSYS)*TICK_PERIOD);
   

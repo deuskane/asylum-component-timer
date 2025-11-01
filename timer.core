@@ -16,12 +16,29 @@ CAPI=2:
 # 2021-10-26  1.0.0    mrosiere Created
 # 2021-11-20  1.1.0    mrosiere Fix timer_event_r clear condition
 # 2025-09-05  1.1.1    mrosiere Add Package
+# 2025-11-01  1.2.0    mrosiere Add CSR
 #-----------------------------------------------------------------------------
 
-name : asylum:component:timer:1.1.1
+name        : asylum:component:timer:1.2.0
 description : Timer
 
+#=========================================
+generate:
+#=========================================
+
+  #---------------------------------------
+  gen_csr:
+  #---------------------------------------
+    generator : regtool
+    parameters:
+      file         : hdl/csr/timer.hjson
+      name         : timer
+      copy         : hdl/csr
+      logical_name : asylum
+
+#=========================================
 filesets:
+#=========================================
 
   #---------------------------------------
   # Source Files
@@ -31,10 +48,13 @@ filesets:
       - hdl/timer_pkg.vhd
       - hdl/pbi_timer.vhd
       - hdl/timer.vhd
+      - hdl/timer_v1.vhd
     file_type    : vhdlSource
     logical_name : asylum
     depend       :
-      - ">=asylum:component:pbi_wrapper_target:1.0.0"
+      - asylum:utils:generators
+      - asylum:utils:pkg
+      - asylum:component:pbi_wrapper_target
       
   #---------------------------------------
   # Testbench Files
@@ -44,19 +64,24 @@ filesets:
       - sim/tb_timer.vhd
     file_type : vhdlSource
 
+#=========================================
 targets:
+#=========================================
 
   #---------------------------------------
-  # Default Target
-  #---------------------------------------
   default: &default
+  #---------------------------------------
     description     : Default Target
     filesets        :
       - files_hdl
     toplevel        : timer
     default_tool    : ghdl
+    generate        :
+      - gen_csr
 
+  #---------------------------------------
   sim_basic:
+  #---------------------------------------
     << : *default
     description     : Simulation of all cases
     filesets_append :
@@ -67,7 +92,9 @@ targets:
       ghdl :
         run_options : ["--vcd=dut.vcd"]
 
+#=========================================
 parameters :
+#=========================================
 
   SIZE_ADDR     :
     description : Bus Address width

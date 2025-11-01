@@ -6,7 +6,7 @@
 -- Author     : mrosiere
 -- Company    : 
 -- Created    : 2016-11-11
--- Last update: 2025-09-06
+-- Last update: 2025-11-01
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ begin
   ------------------------------------------------
   -- Instance of DUT
   ------------------------------------------------
-  dut : timer
+  dut : timer_v1
   generic map
   (
     TICK             => positive(real(FSYS)*TICK_PERIOD)

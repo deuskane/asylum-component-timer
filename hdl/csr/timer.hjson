@@ -1,0 +1,135 @@
+{
+    name      : "timer",
+    width     : 8,
+    desc      : "CSR for Timer"
+    interface : "pbi"
+    
+
+    parameters : [
+    ]
+
+   registers : [
+
+        {
+            name         : "isr",
+            address      : "x0",
+            desc         : "Interruption Status Register",
+            swaccess     : "rw1c",
+            hwaccess     : "rw",
+            hwtype       : "reg",
+
+            fields: [
+                {
+                    name: "value",
+                    bits: "0",
+                    desc: "0: interrupt is inactive, 1: interrupt is active"
+                },
+            ]
+        },
+
+        {
+            name         : "imr",
+            address      : "x1",
+            desc         : "Interruption Mask Register",
+            swaccess     : "rw",
+            hwaccess     : "ro",
+            hwtype       : "reg",
+
+            fields: [
+                {
+                    name: "enable",
+                    bits: "0",
+		    init: "x0",
+                    desc: "0: interrupt is disable, 1: interrupt is enable"
+                },
+            ]
+        },
+
+        {
+            name       : "control",
+            address    : "x2",
+            desc       : "Control Timer",
+            swaccess   : "rw",
+            hwaccess   : "ro",
+            fields: [
+                {
+                    name: "enable",
+                    bits: "0",
+                    init: "d0",
+                    desc: "Time Enable : 0 disable, 1 enable"
+                },
+                {
+                    name: "autostart",
+                    bits: "1",
+                    init: "d0",
+                    desc: "Time autostart after evant : 0 disable, 1 enable"
+                },
+		
+            ]
+        },
+        {
+            name       : "timer_byte0",
+            address    : "x4",
+            desc       : "Timer Init Value byte 0",
+            swaccess   : "rw",
+            hwaccess   : "ro",
+            fields: [
+                {
+                    name: "value",
+                    bits: "7:0",
+                    init: "d0",
+                    desc: "Timer Init Value byte 0"
+                },
+            ]
+        },
+        {
+            name       : "timer_byte1",
+            address    : "x5",
+            desc       : "Timer Init Value byte 1",
+            swaccess   : "rw",
+            hwaccess   : "ro",
+            fields: [
+                {
+                    name: "value",
+                    bits: "7:0",
+                    init: "d0",
+                    desc: "Timer Init Value byte 1"
+                },
+            ]
+        },
+        {
+            name       : "timer_byte2",
+            address    : "x6",
+            desc       : "Timer Init Value byte 2",
+            swaccess   : "rw",
+            hwaccess   : "ro",
+            fields: [
+                {
+                    name: "value",
+                    bits: "7:0",
+                    init: "d0",
+                    desc: "Timer Init Value byte 2"
+                },
+            ]
+        },
+        {
+            name       : "timer_byte3",
+            address    : "x7",
+            desc       : "Timer Init Value byte 3",
+            swaccess   : "rw",
+            hwaccess   : "ro",
+            fields: [
+                {
+                    name: "value",
+                    bits: "7:0",
+                    init: "d0",
+                    desc: "Timer Init Value byte 3"
+                },
+            ]
+        },
+
+
+
+
+   ]
+}

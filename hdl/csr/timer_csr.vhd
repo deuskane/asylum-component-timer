@@ -47,9 +47,14 @@ architecture rtl of timer_registers is
 
   signal   sig_busy  : std_logic;
 
-  constant INIT_isr : std_logic_vector(1-1 downto 0) :=
-             "0" -- value
-           ;
+  function INIT_isr
+    return std_logic_vector is
+    variable tmp : std_logic_vector(1-1 downto 0);
+  begin  -- function INIT_isr
+    tmp(0 downto 0) := "0"; -- value
+    return tmp;
+  end function INIT_isr;
+
   signal   isr_wcs       : std_logic;
   signal   isr_we        : std_logic;
   signal   isr_wdata     : std_logic_vector(8-1 downto 0);
@@ -64,9 +69,14 @@ architecture rtl of timer_registers is
   signal   isr_rdata_hw  : std_logic_vector(1-1 downto 0);
   signal   isr_rbusy     : std_logic;
 
-  constant INIT_imr : std_logic_vector(1-1 downto 0) :=
-             "0" -- enable
-           ;
+  function INIT_imr
+    return std_logic_vector is
+    variable tmp : std_logic_vector(1-1 downto 0);
+  begin  -- function INIT_imr
+    tmp(0 downto 0) := "0"; -- enable
+    return tmp;
+  end function INIT_imr;
+
   signal   imr_wcs       : std_logic;
   signal   imr_we        : std_logic;
   signal   imr_wdata     : std_logic_vector(8-1 downto 0);
@@ -81,11 +91,16 @@ architecture rtl of timer_registers is
   signal   imr_rdata_hw  : std_logic_vector(1-1 downto 0);
   signal   imr_rbusy     : std_logic;
 
-  constant INIT_control : std_logic_vector(3-1 downto 0) :=
-             "1" -- clear
-           & "0" -- enable
-           & "0" -- autostart
-           ;
+  function INIT_control
+    return std_logic_vector is
+    variable tmp : std_logic_vector(3-1 downto 0);
+  begin  -- function INIT_control
+    tmp(0 downto 0) := "1"; -- clear
+    tmp(1 downto 1) := "0"; -- enable
+    tmp(2 downto 2) := "0"; -- autostart
+    return tmp;
+  end function INIT_control;
+
   signal   control_wcs       : std_logic;
   signal   control_we        : std_logic;
   signal   control_wdata     : std_logic_vector(8-1 downto 0);
@@ -100,9 +115,14 @@ architecture rtl of timer_registers is
   signal   control_rdata_hw  : std_logic_vector(3-1 downto 0);
   signal   control_rbusy     : std_logic;
 
-  constant INIT_timer_byte0 : std_logic_vector(8-1 downto 0) :=
-             "00000000" -- value
-           ;
+  function INIT_timer_byte0
+    return std_logic_vector is
+    variable tmp : std_logic_vector(8-1 downto 0);
+  begin  -- function INIT_timer_byte0
+    tmp(7 downto 0) := "00000000"; -- value
+    return tmp;
+  end function INIT_timer_byte0;
+
   signal   timer_byte0_wcs       : std_logic;
   signal   timer_byte0_we        : std_logic;
   signal   timer_byte0_wdata     : std_logic_vector(8-1 downto 0);
@@ -117,9 +137,14 @@ architecture rtl of timer_registers is
   signal   timer_byte0_rdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte0_rbusy     : std_logic;
 
-  constant INIT_timer_byte1 : std_logic_vector(8-1 downto 0) :=
-             "00000000" -- value
-           ;
+  function INIT_timer_byte1
+    return std_logic_vector is
+    variable tmp : std_logic_vector(8-1 downto 0);
+  begin  -- function INIT_timer_byte1
+    tmp(7 downto 0) := "00000000"; -- value
+    return tmp;
+  end function INIT_timer_byte1;
+
   signal   timer_byte1_wcs       : std_logic;
   signal   timer_byte1_we        : std_logic;
   signal   timer_byte1_wdata     : std_logic_vector(8-1 downto 0);
@@ -134,9 +159,14 @@ architecture rtl of timer_registers is
   signal   timer_byte1_rdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte1_rbusy     : std_logic;
 
-  constant INIT_timer_byte2 : std_logic_vector(8-1 downto 0) :=
-             "00000000" -- value
-           ;
+  function INIT_timer_byte2
+    return std_logic_vector is
+    variable tmp : std_logic_vector(8-1 downto 0);
+  begin  -- function INIT_timer_byte2
+    tmp(7 downto 0) := "00000000"; -- value
+    return tmp;
+  end function INIT_timer_byte2;
+
   signal   timer_byte2_wcs       : std_logic;
   signal   timer_byte2_we        : std_logic;
   signal   timer_byte2_wdata     : std_logic_vector(8-1 downto 0);
@@ -151,9 +181,14 @@ architecture rtl of timer_registers is
   signal   timer_byte2_rdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte2_rbusy     : std_logic;
 
-  constant INIT_timer_byte3 : std_logic_vector(8-1 downto 0) :=
-             "00000000" -- value
-           ;
+  function INIT_timer_byte3
+    return std_logic_vector is
+    variable tmp : std_logic_vector(8-1 downto 0);
+  begin  -- function INIT_timer_byte3
+    tmp(7 downto 0) := "00000000"; -- value
+    return tmp;
+  end function INIT_timer_byte3;
+
   signal   timer_byte3_wcs       : std_logic;
   signal   timer_byte3_we        : std_logic;
   signal   timer_byte3_wdata     : std_logic_vector(8-1 downto 0);

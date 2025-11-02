@@ -6,7 +6,7 @@
 -- Author     : Mathieu Rosiere
 -- Company    : 
 -- Created    : 2017-04-12
--- Last update: 2025-11-01
+-- Last update: 2025-11-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,6 +28,7 @@ use IEEE.numeric_std.ALL;
 library asylum;
 use     asylum.timer_csr_pkg.ALL;
 use     asylum.pbi_pkg.all;
+use     asylum.GIC_pkg.all;
 
 entity timer is
 
@@ -54,27 +55,32 @@ architecture rtl of timer is
   ---------------------------------------------
   -- Register
   ---------------------------------------------
-  signal timer_cnt_r   : unsigned(32-1 downto 0);
+  signal timer_init    : std_logic_vector(32-1 downto 0);
+  signal timer_cnt_r   : unsigned        (32-1 downto 0);
   signal timer_rst     : std_logic;
   signal timer_cke     : std_logic;
   signal timer_done    : std_logic;
   signal timer_restart : std_logic;
+
+  signal gic_it        : std_logic_vector(1-1 downto 0);
   
 begin  -- architecture rtl
 
   ---------------------------------------------
   -- Timer counter
   ---------------------------------------------
+  timer_init <= sw2hw_i.timer_byte3.value &
+                sw2hw_i.timer_byte2.value &
+                sw2hw_i.timer_byte1.value &
+                sw2hw_i.timer_byte0.value;
+  
   process (clk_i)
   begin
     if (rising_edge(clk_i))
     then
       if (timer_rst = '1')
       then
-        timer_cnt_r <= sw2hw.timer_byte3.value &
-                       sw2hw.timer_byte2.value &
-                       sw2hw.timer_byte1.value &
-                       sw2hw.timer_byte0.value;
+        timer_cnt_r <= unsigned(timer_init);
       elsif (timer_cke  = '1' and
              timer_done = '0')
       then
@@ -86,24 +92,26 @@ begin  -- architecture rtl
   ---------------------------------------------
   -- Timer counter Control
   ---------------------------------------------
-  timer_cke     <= sw2hw.control.enable and not timer_disable_i;
-  timer_rst     <= sw2hw.control.clear  or      timer_clear_i  or timer_restart;
+  timer_cke     <= sw2hw_i.control.enable(0) and not timer_disable_i;
+  timer_rst     <= sw2hw_i.control.clear(0)  or      timer_clear_i  or timer_restart;
   timer_done    <= '1' when timer_cnt_r = 0 else '0';
-  timer_restart <= sw2hw.control.autostart and timer_done;
+  timer_restart <= sw2hw_i.control.autostart(0) and timer_done;
   
   ---------------------------------------------
   -- Interruption
   ---------------------------------------------
 
-  hw2sw.isr.we    <= '1';
+  hw2sw_o.isr.we    <= '1';
 
+  gic_it(0)         <= timer_done;
+  
   ins_GIC_core : GIC_core
   port map(
-    itm_o     => it_o            ,
-    its_i     => timer_done      ,
-    isr_i     => sw2hw.isr.value ,
-    isr_o     => hw2sw.isr.value ,
-    imr_i     => sw2hw.imr.enable
+    itm_o     => it_o              ,
+    its_i     => gic_it            ,
+    isr_i     => sw2hw_i.isr.value ,
+    isr_o     => hw2sw_o.isr.value ,
+    imr_i     => sw2hw_i.imr.enable
     );
   
 end architecture rtl;

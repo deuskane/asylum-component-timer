@@ -57,7 +57,7 @@ begin  -- architecture rtl
   ins_csr : timer_registers
   port map(
     clk_i     => clk_i           ,
-    arst_b_i  => arstn_i         ,
+    arst_b_i  => arst_b_i        ,
     pbi_ini_i => pbi_ini_i       ,
     pbi_tgt_o => pbi_tgt_o       ,
     sw2hw_o   => sw2hw           ,

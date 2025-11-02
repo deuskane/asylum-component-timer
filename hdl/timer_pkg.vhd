@@ -3,9 +3,29 @@ use     IEEE.STD_LOGIC_1164.ALL;
 use     IEEE.NUMERIC_STD.ALL;
 library asylum;
 use     asylum.pbi_pkg.all;
+use     asylum.timer_csr_pkg.all;
 
 package timer_pkg is
 -- [COMPONENT_INSERT][BEGIN]
+component pbi_timer is
+  port   (
+    clk_i            : in    std_logic;
+    arst_b_i         : in    std_logic; -- asynchronous reset
+
+    -- Bus
+    pbi_ini_i        : in    pbi_ini_t;
+    pbi_tgt_o        : out   pbi_tgt_t;
+
+    -- External Interface
+    timer_disable_i  : in    std_logic;
+    timer_clear_i    : in    std_logic;
+
+    -- To/From IT Ctrl
+    it_o             : out   std_logic
+    );
+
+end component pbi_timer;
+
 component timer_v1 is
   generic(
 --  FSYS             : positive := 50_000_000;
@@ -37,29 +57,25 @@ component timer_v1 is
 
 end component timer_v1;
 
-component pbi_timer is
-  generic(
---  FSYS             : positive := 50_000_000;
---  TICK_PERIOD      : real     := 0.001; -- 1ms
-    TICK             : positive := 1000; -- FSYS * TICK_PERIOD
-    IT_ENABLE        : boolean  := false; -- Timer can generate interruption
-    ID               : std_logic_vector (PBI_ADDR_WIDTH-1 downto 0) := (others => '0')
-    );
-  port   (
+component timer is
+
+  port (
     clk_i            : in    std_logic;
-    cke_i            : in    std_logic;
-    arstn_i          : in    std_logic; -- asynchronous reset
+    arst_b_i         : in    std_logic; -- asynchronous reset
 
-    -- Bus
-    pbi_ini_i        : in    pbi_ini_t;
-    pbi_tgt_o        : out   pbi_tgt_t;
-    
+    -- External Interface
+    timer_disable_i  : in    std_logic;
+    timer_clear_i    : in    std_logic;
+
     -- To/From IT Ctrl
-    interrupt_o      : out   std_logic;
-    interrupt_ack_i  : in    std_logic
+    it_o             : out   std_logic;
+
+    -- To/From IT Bank
+    sw2hw_i          : in    timer_sw2hw_t;
+    hw2sw_o          : out   timer_hw2sw_t
     );
 
-end component pbi_timer;
+end component timer;
 
 -- [COMPONENT_INSERT][END]
 

@@ -30,8 +30,8 @@
 -------------------------------------------------------------------------------
 -- Revisions  :
 -- Date       Version Author   Description
--- 2021-11-20 1.2     mrosiere Fix timer_event_r clear condition	
--- 2018-06-01 1.1     mrosiere Move Event in dedicated register	
+-- 2021-11-20 1.2     mrosiere Fix timer_event_r clear condition        
+-- 2018-06-01 1.1     mrosiere Move Event in dedicated register 
 -- 2017-04-12 1.0     mrosiere Created
 -------------------------------------------------------------------------------
 

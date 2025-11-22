@@ -2,7 +2,7 @@
     name      : "timer",
     width     : 8,
     desc      : "CSR for Timer"
-    interface : "pbi"
+    interface : "sbi"
     
 
     parameters : [

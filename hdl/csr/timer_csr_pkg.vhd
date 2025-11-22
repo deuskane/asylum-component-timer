@@ -5,7 +5,7 @@ use     IEEE.STD_LOGIC_1164.ALL;
 use     IEEE.NUMERIC_STD.ALL;
 
 library asylum;
-use     asylum.pbi_pkg.all;
+use     asylum.sbi_pkg.all;
 --==================================
 -- Module      : timer
 -- Description : CSR for Timer
@@ -205,8 +205,8 @@ component timer_registers is
     clk_i      : in  std_logic;
     arst_b_i   : in  std_logic;
     -- Bus
-    pbi_ini_i  : in  pbi_ini_t;
-    pbi_tgt_o  : out pbi_tgt_t;
+    sbi_ini_i  : in  sbi_ini_t;
+    sbi_tgt_o  : out sbi_tgt_t;
     -- CSR
     sw2hw_o    : out timer_sw2hw_t;
     hw2sw_i    : in  timer_hw2sw_t

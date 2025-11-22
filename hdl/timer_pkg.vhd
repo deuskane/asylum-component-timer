@@ -2,30 +2,11 @@ library IEEE;
 use     IEEE.STD_LOGIC_1164.ALL;
 use     IEEE.NUMERIC_STD.ALL;
 library asylum;
-use     asylum.pbi_pkg.all;
+use     asylum.sbi_pkg.all;
 use     asylum.timer_csr_pkg.all;
 
 package timer_pkg is
 -- [COMPONENT_INSERT][BEGIN]
-component pbi_timer is
-  port   (
-    clk_i            : in    std_logic;
-    arst_b_i         : in    std_logic; -- asynchronous reset
-
-    -- Bus
-    pbi_ini_i        : in    pbi_ini_t;
-    pbi_tgt_o        : out   pbi_tgt_t;
-
-    -- External Interface
-    timer_disable_i  : in    std_logic;
-    timer_clear_i    : in    std_logic;
-
-    -- To/From IT Ctrl
-    it_o             : out   std_logic
-    );
-
-end component pbi_timer;
-
 component timer_v1 is
   generic(
 --  FSYS             : positive := 50_000_000;
@@ -76,6 +57,25 @@ component timer is
     );
 
 end component timer;
+
+component sbi_timer is
+  port   (
+    clk_i            : in    std_logic;
+    arst_b_i         : in    std_logic; -- asynchronous reset
+
+    -- Bus
+    sbi_ini_i        : in    sbi_ini_t;
+    sbi_tgt_o        : out   sbi_tgt_t;
+
+    -- External Interface
+    timer_disable_i  : in    std_logic;
+    timer_clear_i    : in    std_logic;
+
+    -- To/From IT Ctrl
+    it_o             : out   std_logic
+    );
+
+end component sbi_timer;
 
 -- [COMPONENT_INSERT][END]
 

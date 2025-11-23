@@ -50,7 +50,7 @@ filesets:
       - hdl/sbi_timer.vhd
       - hdl/timer_core.vhd
       - hdl/timer_v1.vhd
-    file_type    : vhdlSource
+    file_type    : vhdlSource-2008
     logical_name : asylum
     depend       :
       - asylum:utils:generators

@@ -759,4 +759,5 @@ begin  -- architecture rtl
     timer_byte2_rdata when timer_byte2_rcs = '1' else
     timer_byte3_rdata when timer_byte3_rcs = '1' else
     (others => '0'); -- Bad Address, return 0
+  sbi_tgt_o.info.name <= to_sbi_name("timer");
 end architecture rtl;

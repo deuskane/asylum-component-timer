@@ -7,6 +7,45 @@ use     asylum.timer_csr_pkg.all;
 
 package timer_pkg is
 -- [COMPONENT_INSERT][BEGIN]
+component sbi_timer is
+  port   (
+    clk_i            : in    std_logic;
+    arst_b_i         : in    std_logic; -- asynchronous reset
+
+    -- Bus
+    sbi_ini_i        : in    sbi_ini_t;
+    sbi_tgt_o        : out   sbi_tgt_t;
+
+    -- External Interface
+    timer_disable_i  : in    std_logic;
+    timer_clear_i    : in    std_logic;
+
+    -- To/From IT Ctrl
+    it_o             : out   std_logic
+    );
+
+end component sbi_timer;
+
+component timer is
+
+  port (
+    clk_i            : in    std_logic;
+    arst_b_i         : in    std_logic; -- asynchronous reset
+
+    -- External Interface
+    timer_disable_i  : in    std_logic;
+    timer_clear_i    : in    std_logic;
+
+    -- To/From IT Ctrl
+    it_o             : out   std_logic;
+
+    -- To/From IT Bank
+    sw2hw_i          : in    timer_sw2hw_t;
+    hw2sw_o          : out   timer_hw2sw_t
+    );
+
+end component timer;
+
 component timer_v1 is
   generic(
 --  FSYS             : positive := 50_000_000;
@@ -37,45 +76,6 @@ component timer_v1 is
     );
 
 end component timer_v1;
-
-component timer is
-
-  port (
-    clk_i            : in    std_logic;
-    arst_b_i         : in    std_logic; -- asynchronous reset
-
-    -- External Interface
-    timer_disable_i  : in    std_logic;
-    timer_clear_i    : in    std_logic;
-
-    -- To/From IT Ctrl
-    it_o             : out   std_logic;
-
-    -- To/From IT Bank
-    sw2hw_i          : in    timer_sw2hw_t;
-    hw2sw_o          : out   timer_hw2sw_t
-    );
-
-end component timer;
-
-component sbi_timer is
-  port   (
-    clk_i            : in    std_logic;
-    arst_b_i         : in    std_logic; -- asynchronous reset
-
-    -- Bus
-    sbi_ini_i        : in    sbi_ini_t;
-    sbi_tgt_o        : out   sbi_tgt_t;
-
-    -- External Interface
-    timer_disable_i  : in    std_logic;
-    timer_clear_i    : in    std_logic;
-
-    -- To/From IT Ctrl
-    it_o             : out   std_logic
-    );
-
-end component sbi_timer;
 
 -- [COMPONENT_INSERT][END]
 

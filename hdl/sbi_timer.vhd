@@ -30,6 +30,9 @@ use     asylum.timer_pkg.all;
 use     asylum.timer_csr_pkg.all;
 
 entity sbi_timer is
+  generic (
+    NAME             : string := ""
+    );
   port   (
     clk_i            : in    std_logic;
     arst_b_i         : in    std_logic; -- asynchronous reset
@@ -56,6 +59,9 @@ architecture rtl of sbi_timer is
 begin  -- architecture rtl
 
   ins_csr : timer_registers
+  generic map(
+    MODULE_NAME           => NAME
+    )
   port map(
     clk_i     => clk_i           ,
     arst_b_i  => arst_b_i        ,

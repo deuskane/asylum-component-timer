@@ -18,6 +18,9 @@ use     asylum.sbi_pkg.all;
 -- Width       : 8
 --==================================
 entity timer_registers is
+  generic (
+    MODULE_NAME :  string := "" -- Name of the module
+  );
   port (
     -- Clock and Reset
     clk_i      : in  std_logic
@@ -759,5 +762,11 @@ begin  -- architecture rtl
     timer_byte2_rdata when timer_byte2_rcs = '1' else
     timer_byte3_rdata when timer_byte3_rcs = '1' else
     (others => '0'); -- Bad Address, return 0
-  sbi_tgt_o.info.name <= to_sbi_name("timer");
+
+  gen_tgt_info_name : if MODULE_NAME = ""
+  generate
+    sbi_tgt_o.info.name <= to_sbi_name("timer");
+  else generate
+    sbi_tgt_o.info.name <= to_sbi_name(MODULE_NAME);
+  end generate;
 end architecture rtl;

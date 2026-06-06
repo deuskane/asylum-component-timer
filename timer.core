@@ -18,9 +18,10 @@ CAPI=2:
 # 2025-09-05  1.1.1    mrosiere Add Package
 # 2025-11-01  2.0.0    mrosiere Add CSR, core rework
 # 2025-11-22  2.0.1    mrosiere Use sbi instead pbi
+# 2026-06-06  2.0.2    mrosiere Add Name
 #-----------------------------------------------------------------------------
 
-name        : asylum:component:timer:2.0.1
+name        : asylum:component:timer:2.0.2
 description : Timer
 
 #=========================================

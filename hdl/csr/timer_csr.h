@@ -111,13 +111,13 @@
 #define TIMER_TIMER_BYTE3_VALUE_MASK 255
 
 //----------------------------------
-// Structure {module}_t
+// Structure timer_t
 //----------------------------------
 typedef struct {
   uint8_t isr; // 0x0
   uint8_t imr; // 0x1
   uint8_t control; // 0x2
-  uint8_t __dummy_0x3__
+  uint8_t __dummy_0x3__;
   uint8_t timer_byte0; // 0x4
   uint8_t timer_byte1; // 0x5
   uint8_t timer_byte2; // 0x6

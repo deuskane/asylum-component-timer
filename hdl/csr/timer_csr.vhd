@@ -38,13 +38,13 @@ architecture rtl of timer_registers is
 
   signal   sig_wcs   : std_logic;
   signal   sig_we    : std_logic;
-  signal   sig_waddr : std_logic_vector(sbi_ini_i.addr'length-1 downto 0);
+  signal   sig_waddr : unsigned(timer_ADDR_WIDTH-1 downto 0);
   signal   sig_wdata : std_logic_vector(sbi_ini_i.wdata'length-1 downto 0);
   signal   sig_wbusy : std_logic;
 
   signal   sig_rcs   : std_logic;
   signal   sig_re    : std_logic;
-  signal   sig_raddr : std_logic_vector(sbi_ini_i.addr'length-1 downto 0);
+  signal   sig_raddr : unsigned(timer_ADDR_WIDTH-1 downto 0);
   signal   sig_rdata : std_logic_vector(sbi_tgt_o.rdata'length-1 downto 0);
   signal   sig_rbusy : std_logic;
 
@@ -211,12 +211,12 @@ begin  -- architecture rtl
   -- Interface 
   sig_wcs   <= sbi_ini_i.cs;
   sig_we    <= sbi_ini_i.we;
-  sig_waddr <= sbi_ini_i.addr;
+  sig_waddr <= unsigned(sbi_ini_i.addr(timer_ADDR_WIDTH-1 downto 0));
   sig_wdata <= sbi_ini_i.wdata;
 
   sig_rcs   <= sbi_ini_i.cs;
   sig_re    <= sbi_ini_i.re;
-  sig_raddr <= sbi_ini_i.addr;
+  sig_raddr <= unsigned(sbi_ini_i.addr(timer_ADDR_WIDTH-1 downto 0));
   sbi_tgt_o.rdata <= sig_rdata;
   sbi_tgt_o.ready <= not sig_busy;
 
@@ -242,13 +242,13 @@ begin  -- architecture rtl
   --==================================
 
 
-    isr_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(0,timer_ADDR_WIDTH))) else '0';
+    isr_rcs     <= '1' when (sig_raddr = timer_ISR) else '0';
     isr_re      <= sig_rcs and sig_re and isr_rcs;
     isr_rdata   <= (
       0 => isr_rdata_sw(0), -- value(0)
       others => '0');
 
-    isr_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(0,timer_ADDR_WIDTH)))   else '0';
+    isr_wcs     <= '1' when       (sig_waddr = timer_ISR)   else '0';
     isr_we      <= sig_wcs and sig_we and isr_wcs;
     isr_wdata   <= sig_wdata;
     isr_wdata_sw(0 downto 0) <= isr_wdata(0 downto 0); -- value
@@ -309,13 +309,13 @@ begin  -- architecture rtl
   --==================================
 
 
-    imr_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(1,timer_ADDR_WIDTH))) else '0';
+    imr_rcs     <= '1' when (sig_raddr = timer_IMR) else '0';
     imr_re      <= sig_rcs and sig_re and imr_rcs;
     imr_rdata   <= (
       0 => imr_rdata_sw(0), -- enable(0)
       others => '0');
 
-    imr_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(1,timer_ADDR_WIDTH)))   else '0';
+    imr_wcs     <= '1' when       (sig_waddr = timer_IMR)   else '0';
     imr_we      <= sig_wcs and sig_we and imr_wcs;
     imr_wdata   <= sig_wdata;
     imr_wdata_sw(0 downto 0) <= imr_wdata(0 downto 0); -- enable
@@ -387,7 +387,7 @@ begin  -- architecture rtl
   --==================================
 
 
-    control_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(2,timer_ADDR_WIDTH))) else '0';
+    control_rcs     <= '1' when (sig_raddr = timer_CONTROL) else '0';
     control_re      <= sig_rcs and sig_re and control_rcs;
     control_rdata   <= (
       0 => control_rdata_sw(0), -- clear(0)
@@ -395,7 +395,7 @@ begin  -- architecture rtl
       2 => control_rdata_sw(2), -- autostart(0)
       others => '0');
 
-    control_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(2,timer_ADDR_WIDTH)))   else '0';
+    control_wcs     <= '1' when       (sig_waddr = timer_CONTROL)   else '0';
     control_we      <= sig_wcs and sig_we and control_wcs;
     control_wdata   <= sig_wdata;
     control_wdata_sw(0 downto 0) <= control_wdata(0 downto 0); -- clear
@@ -461,7 +461,7 @@ begin  -- architecture rtl
   --==================================
 
 
-    timer_byte0_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(4,timer_ADDR_WIDTH))) else '0';
+    timer_byte0_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE0) else '0';
     timer_byte0_re      <= sig_rcs and sig_re and timer_byte0_rcs;
     timer_byte0_rdata   <= (
       0 => timer_byte0_rdata_sw(0), -- value(0)
@@ -474,7 +474,7 @@ begin  -- architecture rtl
       7 => timer_byte0_rdata_sw(7), -- value(7)
       others => '0');
 
-    timer_byte0_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(4,timer_ADDR_WIDTH)))   else '0';
+    timer_byte0_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE0)   else '0';
     timer_byte0_we      <= sig_wcs and sig_we and timer_byte0_wcs;
     timer_byte0_wdata   <= sig_wdata;
     timer_byte0_wdata_sw(7 downto 0) <= timer_byte0_wdata(7 downto 0); -- value
@@ -534,7 +534,7 @@ begin  -- architecture rtl
   --==================================
 
 
-    timer_byte1_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(5,timer_ADDR_WIDTH))) else '0';
+    timer_byte1_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE1) else '0';
     timer_byte1_re      <= sig_rcs and sig_re and timer_byte1_rcs;
     timer_byte1_rdata   <= (
       0 => timer_byte1_rdata_sw(0), -- value(0)
@@ -547,7 +547,7 @@ begin  -- architecture rtl
       7 => timer_byte1_rdata_sw(7), -- value(7)
       others => '0');
 
-    timer_byte1_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(5,timer_ADDR_WIDTH)))   else '0';
+    timer_byte1_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE1)   else '0';
     timer_byte1_we      <= sig_wcs and sig_we and timer_byte1_wcs;
     timer_byte1_wdata   <= sig_wdata;
     timer_byte1_wdata_sw(7 downto 0) <= timer_byte1_wdata(7 downto 0); -- value
@@ -607,7 +607,7 @@ begin  -- architecture rtl
   --==================================
 
 
-    timer_byte2_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(6,timer_ADDR_WIDTH))) else '0';
+    timer_byte2_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE2) else '0';
     timer_byte2_re      <= sig_rcs and sig_re and timer_byte2_rcs;
     timer_byte2_rdata   <= (
       0 => timer_byte2_rdata_sw(0), -- value(0)
@@ -620,7 +620,7 @@ begin  -- architecture rtl
       7 => timer_byte2_rdata_sw(7), -- value(7)
       others => '0');
 
-    timer_byte2_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(6,timer_ADDR_WIDTH)))   else '0';
+    timer_byte2_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE2)   else '0';
     timer_byte2_we      <= sig_wcs and sig_we and timer_byte2_wcs;
     timer_byte2_wdata   <= sig_wdata;
     timer_byte2_wdata_sw(7 downto 0) <= timer_byte2_wdata(7 downto 0); -- value
@@ -680,7 +680,7 @@ begin  -- architecture rtl
   --==================================
 
 
-    timer_byte3_rcs     <= '1' when     (sig_raddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(7,timer_ADDR_WIDTH))) else '0';
+    timer_byte3_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE3) else '0';
     timer_byte3_re      <= sig_rcs and sig_re and timer_byte3_rcs;
     timer_byte3_rdata   <= (
       0 => timer_byte3_rdata_sw(0), -- value(0)
@@ -693,7 +693,7 @@ begin  -- architecture rtl
       7 => timer_byte3_rdata_sw(7), -- value(7)
       others => '0');
 
-    timer_byte3_wcs     <= '1' when       (sig_waddr(timer_ADDR_WIDTH-1 downto 0) = std_logic_vector(to_unsigned(7,timer_ADDR_WIDTH)))   else '0';
+    timer_byte3_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE3)   else '0';
     timer_byte3_we      <= sig_wcs and sig_we and timer_byte3_wcs;
     timer_byte3_wdata   <= sig_wdata;
     timer_byte3_wdata_sw(7 downto 0) <= timer_byte3_wdata(7 downto 0); -- value

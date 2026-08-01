@@ -18,8 +18,8 @@ package timer_csr_pkg is
   -- Global Constants
   ------------------------------------
 
-  constant timer_ADDR_WIDTH : natural := 3;
-  constant timer_DATA_WIDTH : natural := 8;
+  constant TIMER_ADDR_WIDTH : natural := 3;
+  constant TIMER_DATA_WIDTH : natural := 8;
 
   --==================================
   -- Register    : isr
@@ -30,7 +30,7 @@ package timer_csr_pkg is
   -- Hw Access   : rw
   -- Hw Type     : reg
   --==================================
-  constant timer_ISR : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(0, timer_ADDR_WIDTH);
+  constant TIMER_ISR : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(0, TIMER_ADDR_WIDTH);
 
   type timer_isr_sw2hw_t is record
     re : std_logic;
@@ -62,7 +62,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_IMR : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(1, timer_ADDR_WIDTH);
+  constant TIMER_IMR : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(1, TIMER_ADDR_WIDTH);
 
   type timer_imr_sw2hw_t is record
     re : std_logic;
@@ -84,7 +84,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_CONTROL : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(2, timer_ADDR_WIDTH);
+  constant TIMER_CONTROL : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(2, TIMER_ADDR_WIDTH);
 
   type timer_control_sw2hw_t is record
     re : std_logic;
@@ -118,7 +118,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_TIMER_BYTE0 : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(4, timer_ADDR_WIDTH);
+  constant TIMER_TIMER_BYTE0 : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(4, TIMER_ADDR_WIDTH);
 
   type timer_timer_byte0_sw2hw_t is record
     re : std_logic;
@@ -140,7 +140,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_TIMER_BYTE1 : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(5, timer_ADDR_WIDTH);
+  constant TIMER_TIMER_BYTE1 : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(5, TIMER_ADDR_WIDTH);
 
   type timer_timer_byte1_sw2hw_t is record
     re : std_logic;
@@ -162,7 +162,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_TIMER_BYTE2 : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(6, timer_ADDR_WIDTH);
+  constant TIMER_TIMER_BYTE2 : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(6, TIMER_ADDR_WIDTH);
 
   type timer_timer_byte2_sw2hw_t is record
     re : std_logic;
@@ -184,7 +184,7 @@ package timer_csr_pkg is
   -- Hw Access   : ro
   -- Hw Type     : reg
   --==================================
-  constant timer_TIMER_BYTE3 : unsigned(timer_ADDR_WIDTH-1 downto 0) := to_unsigned(7, timer_ADDR_WIDTH);
+  constant TIMER_TIMER_BYTE3 : unsigned(TIMER_ADDR_WIDTH-1 downto 0) := to_unsigned(7, TIMER_ADDR_WIDTH);
 
   type timer_timer_byte3_sw2hw_t is record
     re : std_logic;

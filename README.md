@@ -1,3 +1,5 @@
+[![CI](https://github.com/deuskane/asylum-component-timer/actions/workflows/ci.yml/badge.svg)](https://github.com/deuskane/asylum-component-timer/actions/workflows/ci.yml)
+
 # Asylum Component: Timer
 
 ## Table of Contents

@@ -19,9 +19,12 @@ CAPI=2:
 # 2025-11-01  2.0.0    mrosiere Add CSR, core rework
 # 2025-11-22  2.0.1    mrosiere Use sbi instead pbi
 # 2026-06-06  2.0.2    mrosiere Add Name
+# 2026-10-05  2.0.3    mrosiere Self-checking UVVM bench of sbi_timer (sim_sbi_timer)
+#                               replaces the legacy timer_v1 bench, remove unused
+#                               parameters section
 #-----------------------------------------------------------------------------
 
-name        : asylum:component:timer:2.0.2
+name        : asylum:component:timer:2.0.3
 description : Timer
 
 #=========================================
@@ -63,8 +66,10 @@ filesets:
   #---------------------------------------
   files_sim:
     files:
-      - sim/tb_timer.vhd
-    file_type : vhdlSource
+      - sim/tb_sbi_timer.vhd
+    file_type : vhdlSource-2008
+    depend       :
+      - bitvis:verification:uvvm
 
 #=========================================
 targets:
@@ -82,42 +87,15 @@ targets:
       - gen_csr
 
   #---------------------------------------
-  sim_basic:
+  sim_sbi_timer:
   #---------------------------------------
     << : *default
-    description     : Simulation of all cases
+    description     : Simulation of sbi_timer with SBI VIP
     filesets_append :
       - files_sim
-    toplevel        : tb_timer
+    toplevel        : tb_sbi_timer
     default_tool    : ghdl
     tools :
       ghdl :
-        run_options : ["--vcd=dut.vcd"]
-
-#=========================================
-parameters :
-#=========================================
-
-  SIZE_ADDR     :
-    description : Bus Address width
-    datatype    : int
-    default     : 3
-    paramtype   : generic
-
-  SIZE_DATA :
-    description : Bus Data width
-    datatype    : int
-    default     : 8
-    paramtype   : generic
-
-  IT_ENABLE :
-    description : Allow interruption
-    datatype    : bool
-    default     : false
-    paramtype   : generic
-
-  TICK :
-    description : Value of the internal divider
-    datatype    : int
-    default     : 1000
-    paramtype   : generic
+        analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable"]

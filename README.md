@@ -1,137 +1,310 @@
+<!--
+  README GENERATION INSTRUCTIONS (for the next regeneration run)
+  ----------------------------------------------------------------
+  This README follows the common Asylum IP model. Regenerate it from the
+  sources, never from the previous README text alone.
+
+  Sources of truth (in priority order):
+    1. hdl/*.vhd            : entities, generics, ports, packages
+    2. hdl/csr/*.hjson      : register map (regtool); *_csr.md/.h are generated
+    3. <IP>.core            : VLNV (name), filesets, targets, depends, revisions
+    4. mk/targets.txt       : target list shown by `make help`; mk/defs.mk
+    5. sim/, syn/, esw/, boards/ : testbenches, constraints, software
+  Section order (keep it, same headings in every IP):
+    CI badge / Title + one-line description + VLNV / Table of Contents /
+    Introduction (Key Features) / Block Diagram / Top-Level (Parameters,
+    Ports, Instantiation Example) / HDL Modules / Register Map /
+    Verification / Synthesis / Design Notes (optional) /
+    Directory Structure / Dependencies
+  Rules:
+    - Language: English. Tables: Parameters = Name|Type|Default|Description,
+      Ports = Name|Direction|Type|Description (grouped by interface).
+    - Register Map: link to the generated hdl/csr/<X>_csr.md (plus the
+      .hjson source and _csr.h header); never copy register tables here.
+    - Top-Level = sbi_* wrapper if present, else the entity used by the
+      `default` target, else the main entity (libraries: list packages).
+    - Write "This IP has no software-visible registers." / "No dedicated
+      synthesis target ..." instead of removing a section.
+    - Keep still-accurate hand-written content (ISA tables, results,
+      images) in "Design Notes"; drop anything not backed by the sources.
+    - Block diagram: doc/<NAME>.drawio (NAME = 4th field of the VLNV),
+      top entity box with generics on top, inputs left, outputs right,
+      bus interfaces as bold arrows, internal blocks colour-coded
+      (CSR yellow, FIFO/memory green, core logic blue, external grey).
+      Update it whenever ports/generics/sub-blocks change.
+    - Do not edit generated files (hdl/csr/*_csr.*) or the CI badge URL.
+-->
 [![CI](https://github.com/deuskane/asylum-component-timer/actions/workflows/ci.yml/badge.svg)](https://github.com/deuskane/asylum-component-timer/actions/workflows/ci.yml)
 
-# Asylum Component: Timer
+# asylum-component-timer
+
+**32-bit down-counter timer with CSR access over the SBI bus, auto-reload, external disable / clear inputs and an interrupt output.**
+
+VLNV: `asylum:component:timer:2.0.3`
 
 ## Table of Contents
 
-- **Introduction**: brief description of the repository
-- **HDL Modules**: detailed description of each module in `hdl/` with generics and ports
-- **CSR Register Map**: register summary (from `hdl/csr/*.hjson` and `hdl/csr/*.md`)
-- **Verification**: how to run the testbench and FuseSoC core information
+1. [Introduction](#introduction)
+2. [Block Diagram](#block-diagram)
+3. [Top-Level](#top-level)
+4. [HDL Modules](#hdl-modules)
+5. [Register Map](#register-map)
+6. [Verification](#verification)
+7. [Synthesis](#synthesis)
+8. [Design Notes](#design-notes)
+9. [Directory Structure](#directory-structure)
+10. [Dependencies](#dependencies)
 
 ## Introduction
 
-This repository contains a small timer IP (Asylum Project) implemented in VHDL. The component exposes a simple bus-accessible register map (CSR) and an optional interrupt output. The main sources are under the `hdl/` directory, CSR descriptions and generated files under `hdl/csr/`, and a functional testbench under `sim/`.
+This IP is the timer of the Asylum project. Software writes a 32-bit initial value (4 byte registers), loads it with the `control.clear` bit and starts the count with `control.enable`. The counter decrements once per clock cycle and stops at zero, or reloads itself when `control.autostart` is set. Reaching zero is an interrupt source handled by a `GIC_core` instance (ISR / IMR registers in the CSR bank). Two hardware inputs let the system freeze (`timer_disable_i`) or reload (`timer_clear_i`) the counter.
 
-Key features:
+The legacy register-level implementation `timer_v1` (direct `cs/re/we` bus, tick prescaler) is still part of the sources; it is no longer simulated, the testbench targets `sbi_timer`.
 
-- Byte-addressable counter registers (4 bytes)
-- Control register supporting enable, autostart and tick/clock modes
-- Optional interrupt generation and mask/status registers
-- Simple SBI wrapper (`sbi_timer`) that connects the CSR interface to the timer core
+### Key Features
+
+- 32-bit down counter clocked by `clk_i`, initial value in `timer_byte0..3`
+- One-shot (stops at 0) or auto-reload (`control.autostart`) mode
+- Software reload (`control.clear`, set after reset) and enable (`control.enable`)
+- External `timer_disable_i` (freeze) and `timer_clear_i` (reload) inputs
+- Interrupt on counter = 0, with status (rw1c) and mask registers, merged on `it_o`
+
+## Block Diagram
+
+Diagram: [doc/timer.drawio](doc/timer.drawio) (open with diagrams.net or the VS Code Draw.io extension).
+
+- The SBI bus accesses `timer_registers` (generated by regtool from [hdl/csr/timer.hjson](hdl/csr/timer.hjson)).
+- `timer` ([hdl/timer_core.vhd](hdl/timer_core.vhd)) builds the 32-bit initial value from `timer_byte3..0` and controls the counter from `control` and the external inputs.
+- `timer_done` (counter = 0) is the single interrupt source of the `GIC_core` instantiated inside `timer`.
+- `GIC_core` writes the next `isr` value back to the CSR bank and drives `it_o`.
+
+## Top-Level
+
+Top-level entity: **`sbi_timer`** ([hdl/sbi_timer.vhd](hdl/sbi_timer.vhd)), library `asylum`, component declared in `asylum.timer_pkg`.
+
+### Parameters
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `NAME` | string | `""` | Instance name, forwarded to the CSR block (`MODULE_NAME`, visible in `sbi_tgt_o.info`) |
+
+### Ports
+
+#### Clock & Reset
+
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `clk_i` | in | std_logic | System clock (also the counting clock) |
+| `arst_b_i` | in | std_logic | Asynchronous reset, active low |
+
+#### Bus (SBI)
+
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `sbi_ini_i` | in | sbi_ini_t | SBI request from the initiator (`cs`, `re`, `we`, `addr`, `wdata`) |
+| `sbi_tgt_o` | out | sbi_tgt_t | SBI response to the initiator (`ready`, `rdata`, `info`) |
+
+#### Timer Control
+
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `timer_disable_i` | in | std_logic | 1: the counter does not decrement (freeze) |
+| `timer_clear_i` | in | std_logic | 1: the counter is reloaded with the initial value |
+
+#### Interrupts
+
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `it_o` | out | std_logic | Interrupt request: OR of the `isr` bit |
+
+### Instantiation Example
+
+```vhdl
+library asylum;
+use     asylum.sbi_pkg.all;
+use     asylum.timer_pkg.all;
+
+  ins_timer : entity asylum.sbi_timer
+    generic map
+    ( NAME            => "TIMER0"
+    )
+    port map
+    ( clk_i           => clk
+     ,arst_b_i        => arst_b
+     ,sbi_ini_i       => sbi_inis(TIMER0_ID)  -- sbi_ini_t(addr(2 downto 0), wdata(7 downto 0))
+     ,sbi_tgt_o       => sbi_tgts(TIMER0_ID)  -- sbi_tgt_t(rdata(7 downto 0))
+     ,timer_disable_i => '0'
+     ,timer_clear_i   => '0'
+     ,it_o            => it_timer0
+    );
+```
+
+The CSR bank uses 3 address bits (`TIMER_ADDR_WIDTH = 3`) and 8-bit data (`TIMER_DATA_WIDTH = 8`), see `asylum.timer_csr_pkg`.
 
 ## HDL Modules
 
-This section documents the VHDL modules present in `hdl/`. For each entity the generics (when present) and ports are listed.
+| File | Unit | Kind | Role |
+|------|------|------|------|
+| [hdl/timer_pkg.vhd](hdl/timer_pkg.vhd) | `timer_pkg` | package | Component declarations of `sbi_timer`, `timer` and `timer_v1` |
+| [hdl/sbi_timer.vhd](hdl/sbi_timer.vhd) | `sbi_timer` | entity | Top-level: `timer_registers` + `timer` |
+| [hdl/timer_core.vhd](hdl/timer_core.vhd) | `timer` | entity | 32-bit counter, reload / enable control, `GIC_core` |
+| [hdl/timer_v1.vhd](hdl/timer_v1.vhd) | `timer_v1` | entity | Legacy timer with direct `cs/re/we` bus and tick prescaler (not simulated) |
+| hdl/csr/timer_csr.vhd | `timer_registers` | entity | Generated CSR bank (regtool) |
+| hdl/csr/timer_csr_pkg.vhd | `timer_csr_pkg` | package | Generated types (`timer_sw2hw_t`, `timer_hw2sw_t`), address constants and `timer_registers` component |
 
-- `hdl/sbi_timer.vhd`
+### timer
 
-	Description: top-level wrapper that connects the SBI CSR block to the timer core. It instantiates the generated `timer_registers` CSR block and the `timer` core.
+#### Parameters
 
-	Ports:
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| *(none)* | | | |
 
-	| Name | Direction | Type | Description |
-	|------|-----------|------|-------------|
-	| `clk_i` | in | `std_logic` | Clock input |
-	| `arst_b_i` | in | `std_logic` | Asynchronous reset (active low) |
-	| `sbi_ini_i` | in | `sbi_ini_t` | SBI input interface (bus) |
-	| `sbi_tgt_o` | out | `sbi_tgt_t` | SBI target output interface (bus) |
-	| `timer_disable_i` | in | `std_logic` | External disable signal |
-	| `timer_clear_i` | in | `std_logic` | External clear/reset request |
-	| `it_o` | out | `std_logic` | Interrupt output to interrupt controller |
+#### Ports
 
-	Functionality: The `sbi_timer` is a glue module that maps bus transactions to the CSR block (`timer_registers`) and passes control/status to the `timer` core through structured signals (`timer_sw2hw_t` and `timer_hw2sw_t`).
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `clk_i` | in | std_logic | System clock |
+| `arst_b_i` | in | std_logic | Asynchronous reset, active low (not used: the counter is loaded synchronously) |
+| `timer_disable_i` | in | std_logic | 1: freeze the counter |
+| `timer_clear_i` | in | std_logic | 1: reload the counter |
+| `it_o` | out | std_logic | Merged interrupt from `GIC_core` |
+| `sw2hw_i` | in | timer_sw2hw_t | Register values from `timer_registers` (`control`, `timer_byte*`, `isr`, `imr`) |
+| `hw2sw_o` | out | timer_hw2sw_t | Next `isr` value |
 
-- `hdl/timer_core.vhd` (entity name: `timer`)
+### timer_v1
 
-	Description: pure timer core implementing the counting, control logic and a small GIC interface for interrupt signalling. This component expects the control/status values to be provided through the `sw2hw`/`hw2sw` records.
+#### Parameters
 
-	Ports:
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `TICK` | positive | `1000` | Number of clock cycles per tick in tick mode |
+| `SIZE_ADDR` | natural | `3` | Bus address width |
+| `SIZE_DATA` | natural | `8` | Bus data width (8, 16 or >= 32 handled) |
+| `IT_ENABLE` | boolean | `false` | Not used |
 
-	| Name | Direction | Type | Description |
-	|------|-----------|------|-------------|
-	| `clk_i` | in | `std_logic` | Clock input |
-	| `arst_b_i` | in | `std_logic` | Asynchronous reset (active low) |
-	| `timer_disable_i` | in | `std_logic` | External disable signal |
-	| `timer_clear_i` | in | `std_logic` | External clear | 
-	| `it_o` | out | `std_logic` | Interrupt output |
-	| `sw2hw_i` | in | `timer_sw2hw_t` | Control/status record from CSR block |
-	| `hw2sw_o` | out | `timer_hw2sw_t` | Status record going back to CSR block |
+#### Ports
 
-	Functionality: The `timer` core builds a 32-bit counter from 4 bytes coming from CSR registers, counts down according to either the raw clock or a tick divider, controls enable/autostart logic, and drives interrupt/ISR fields via the `hw2sw_o` record. The core exposes internal signals such as `timer_init`, `timer_cnt_r`, and generates `timer_done` when the counter hits zero. It uses an instance of a GIC core to convert internal event signals into `it_o`.
+| Name | Direction | Type | Description |
+|------|-----------|------|-------------|
+| `clk_i` | in | std_logic | System clock |
+| `cke_i` | in | std_logic | Clock enable of the registers |
+| `arstn_i` | in | std_logic | Asynchronous reset, active low |
+| `cs_i` | in | std_logic | Chip select |
+| `re_i` | in | std_logic | Read enable (a read of `status` clears the event) |
+| `we_i` | in | std_logic | Write enable |
+| `addr_i` | in | std_logic_vector(SIZE_ADDR-1 downto 0) | Address (0: status, 1: control, 4..7: counter bytes) |
+| `wdata_i` | in | std_logic_vector(SIZE_DATA-1 downto 0) | Write data |
+| `rdata_o` | out | std_logic_vector(SIZE_DATA-1 downto 0) | Read data (combinational on `addr_i`) |
+| `busy_o` | out | std_logic | Always `'0'` |
+| `interrupt_o` | out | std_logic | Always `'0'` (interrupt not implemented) |
+| `interrupt_ack_i` | in | std_logic | Not used |
 
-- `hdl/timer_v1.vhd` (entity name: `timer_v1`)
+## Register Map
 
-	Description: bus-accessible register-level implementation of the timer. This is the register-transfer-level IP that implements the CSR registers accessible by a host bus (size configurable by generics).
+The register map is generated by regtool from [hdl/csr/timer.hjson](hdl/csr/timer.hjson):
 
-	Generics:
-
-	| Generic | Type | Default | Description |
-	|---------|------|---------|-------------|
-	| `TICK` | positive | `1000` | Divider value used when tick mode is enabled (number of clock cycles per tick) |
-	| `SIZE_ADDR` | natural | `3` | Bus address width (in bytes / addressable locations) |
-	| `SIZE_DATA` | natural | `8` | Bus data width (bits per transfer) |
-	| `IT_ENABLE` | boolean | `false` | Enable interrupt generation support |
-
-	Ports:
-
-	| Name | Direction | Type | Description |
-	|------|-----------|------|-------------|
-	| `clk_i` | in | `std_logic` | Clock |
-	| `cke_i` | in | `std_logic` | Clock enable (Gated/active cycle) |
-	| `arstn_i` | in | `std_logic` | Active-low asynchronous reset |
-	| `cs_i` | in | `std_logic` | Chip select / enable for bus access |
-	| `re_i` | in | `std_logic` | Read enable |
-	| `we_i` | in | `std_logic` | Write enable |
-	| `addr_i` | in | `std_logic_vector(SIZE_ADDR-1 downto 0)` | Address bus |
-	| `wdata_i` | in | `std_logic_vector(SIZE_DATA-1 downto 0)` | Write data |
-	| `rdata_o` | out | `std_logic_vector(SIZE_DATA-1 downto 0)` | Read data |
-	| `busy_o` | out | `std_logic` | Busy (unused, driven `'0'`) |
-	| `interrupt_o` | out | `std_logic` | Interrupt output |
-	| `interrupt_ack_i` | in | `std_logic` | Interrupt acknowledge input |
-
-	Functionality: `timer_v1` implements the register map documented in the CSR files. Main registers include:
-
-	- `status` (read): contains the event bit that is cleared on read.
-	- `control` (read/write): fields for clear, enable, autostart, tick/clock selection.
-	- `timer_byte[0..3]` (read/write): 4 bytes composing the 32-bit initial counter value.
-
-	The implementation supports various data bus sizes (`SIZE_DATA` = 8, 16, 32) via VHDL generate blocks and packs/unpacks the 32-bit counter accordingly.
-
-- `hdl/timer_pkg.vhd`
-
-	Description: package that contains component declarations for `timer_v1`, `timer`, and `sbi_timer`. It is used by the testbench and higher level wrappers. See the file `hdl/timer_pkg.vhd` for the component interfaces.
-
-	The `timer_v1` component declaration inside the package lists the generics and ports (see `timer_v1` section).
-
-## CSR Register Map
-
-The register map is described in `hdl/csr/timer.hjson` and more human-readable documentation in `hdl/csr/timer_csr.md`.
-
-Summary of registers (from `hdl/csr/timer.hjson`):
-
-| Address | Register | Description | Docs |
-|--------:|---------:|-------------|------|
-| `0x0` | `isr` | Interruption Status Register | [MD](hdl/csr/timer_csr.md#0x0-isr) · [HJSON](hdl/csr/timer.hjson) |
-| `0x1` | `imr` | Interruption Mask Register | [MD](hdl/csr/timer_csr.md#0x1-imr) · [HJSON](hdl/csr/timer.hjson) |
-| `0x2` | `control` | Control Timer | [MD](hdl/csr/timer_csr.md#0x2-control) · [HJSON](hdl/csr/timer.hjson) |
-| `0x4` | `timer_byte0` | Timer Init Value byte 0 | [MD](hdl/csr/timer_csr.md#0x4-timer_byte0) · [HJSON](hdl/csr/timer.hjson) |
-| `0x5` | `timer_byte1` | Timer Init Value byte 1 | [MD](hdl/csr/timer_csr.md#0x5-timer_byte1) · [HJSON](hdl/csr/timer.hjson) |
-| `0x6` | `timer_byte2` | Timer Init Value byte 2 | [MD](hdl/csr/timer_csr.md#0x6-timer_byte2) · [HJSON](hdl/csr/timer.hjson) |
-| `0x7` | `timer_byte3` | Timer Init Value byte 3 | [MD](hdl/csr/timer_csr.md#0x7-timer_byte3) · [HJSON](hdl/csr/timer.hjson) |
+- Register documentation: **[hdl/csr/timer_csr.md](hdl/csr/timer_csr.md)**
+- C header: [hdl/csr/timer_csr.h](hdl/csr/timer_csr.h)
 
 Notes:
 
-- The `timer_csr.md` file contains a complete human-readable description of each register and its bitfields. Follow the links in the table to jump to per-register documentation.
-- The canonical CSR source is `hdl/csr/timer.hjson`. The FuseSoC generator (`regtool`) uses this HJSON to generate VHDL and header files placed in `hdl/csr/`.
+- `control.clear` resets to 1: after reset the counter is held at the initial value until software clears this bit.
+- `timer_byte0` is the least significant byte of the 32-bit initial value. The current counter value is not readable.
+- `isr` / `imr` have a single bit (counter reached 0).
 
 ## Verification
 
-A functional testbench is provided in `sim/tb_timer.vhd`. The FuseSoC core file `timer.core` (at repository root) defines the component and a `sim_basic` target that includes the testbench.
+### Testbenches
 
+| File | DUT | Description |
+|------|-----|-------------|
+| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (131 checks): (1) reset value of every CSR, `it_o` and counter; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, `isr` set again after a rw1c clear while the counter is 0, masked / unmasked behaviour; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, no interrupt while masked, reload by `timer_clear_i`; (7) initial value 0; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
 
-The testbench (`sim/tb_timer.vhd`) demonstrates common usage scenarios:
+### Targets
 
-- Writing the counter bytes and starting the timer
-- Using autostart mode
-- Using tick mode (divider-based timing)
+| Target | Toplevel | Description |
+|--------|----------|-------------|
+| `default` | `timer` | HDL fileset + CSR generation (not a simulation) |
+| `sim_sbi_timer` | `tb_sbi_timer` | Simulation of `sbi_timer` with the SBI VIP (GHDL) |
+
+### How to Run
+
+The default tool is GHDL (`mk/defs.mk`: `TOOL ?= ghdl`, `TARGET ?= sim_sbi_timer`).
+
+```bash
+make help                 # variables, rules and target list (mk/targets.txt)
+make sim_sbi_timer        # run one target (log in log/)
+make nonreg_sim           # run every sim_* target
+make clean                # remove build/ and log/
+```
+
+Equivalent FuseSoC command:
+
+```bash
+fusesoc --cores-root . run --build-root build --target sim_sbi_timer asylum:component:timer:2.0.3
+```
+
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `sim_sbi_timer`.
+
+## Synthesis
+
+No dedicated synthesis target. The HDL sources of the `default` target (`hdl/*.vhd`, VHDL-2008, + generated CSR) contain no simulation-only construct and are synthesizable; note that `timer_v1` is also part of the `files_hdl` fileset. `sbi_timer` has no resource-relevant generic (fixed 32-bit counter, 8-bit CSR bank).
+
+## Design Notes
+
+### Counter Operation (timer)
+
+- Initial value: `timer_byte3 & timer_byte2 & timer_byte1 & timer_byte0`.
+- Reload (priority): `control.clear or timer_clear_i or (control.autostart and done)`.
+- Decrement: `control.enable = 1`, `timer_disable_i = 0` and counter /= 0.
+- `done` = counter equals 0; it is the interrupt source.
+
+With `autostart = 1` the counter reloads the cycle after reaching 0, giving one event every `init + 1` clock cycles. An initial value of 0 makes `done` active as soon as the counter is loaded (also right after reset, where it is masked by `imr = 0`). Without autostart the counter stays at 0 and `done` stays active, so the `isr` bit is set again after a clear as long as the interrupt is unmasked.
+
+Typical sequence: write `timer_byte0..3`, write `control = 0x01` (clear, loads the value), then `control = 0x02` (enable) or `0x06` (enable + autostart); unmask with `imr = 0x01`.
+
+### Interrupts
+
+`GIC_core` computes `isr_next = (imr and done) or isr` every cycle and `it_o = isr`; software clears the bit by writing 1 (rw1c).
+
+### Legacy timer_v1
+
+Registers: 0 = `status` (bit 0: event, cleared on read), 1 = `control` (bit 0: enable, bit 1: autostart, bit 2: it_enable, bit 3: use_tick), 4..7 = counter bytes (write: initial value, read: current value). In tick mode (`use_tick = 1`) the counter decrements once every `TICK` cycles. The enable bit is cleared at the end of the count unless autostart is set. Its interrupt output is not implemented (`interrupt_o = '0'`).
+
+## Directory Structure
+
+```
+asylum-component-timer/
+├── timer.core              # FuseSoC core (asylum:component:timer)
+├── Makefile                # Common Asylum Makefile (FuseSoC wrapper)
+├── mk/
+│   ├── defs.mk             # FILE_CORE, default TARGET and TOOL
+│   └── targets.txt         # Target list (generated from the .core)
+├── .github/workflows/
+│   └── ci.yml              # CI jobs (generated by make ci_generate)
+├── doc/
+│   └── timer.drawio        # Block diagram
+├── hdl/
+│   ├── timer_pkg.vhd
+│   ├── sbi_timer.vhd
+│   ├── timer_core.vhd
+│   ├── timer_v1.vhd        # Legacy implementation
+│   └── csr/
+│       ├── timer.hjson       # Register description (source)
+│       ├── timer_csr.vhd     # Generated
+│       ├── timer_csr_pkg.vhd # Generated
+│       ├── timer_csr.md      # Generated
+│       └── timer_csr.h       # Generated
+└── sim/
+    └── tb_sbi_timer.vhd    # UVVM testbench of sbi_timer
+```
+
+## Dependencies
+
+| Core | Used by (fileset) | Purpose |
+|------|-------------------|---------|
+| `asylum:system:GIC` | `files_hdl` | `GIC_core` used by `timer` |
+| `asylum:utils:generators` | `files_hdl` | regtool generator and CSR building blocks (`csr_reg`) |
+| `asylum:utils:pkg` | `files_hdl` | Common packages (`sbi_pkg`, `pbi_pkg`, ...) |
+| `bitvis:verification:uvvm` | `files_sim` | UVVM utility library and SBI VIP (testbench only) |

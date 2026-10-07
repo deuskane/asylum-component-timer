@@ -1,3 +1,3 @@
-default   : Default Target
-sim_basic : Simulation of all cases
+default       : Default Target
+sim_sbi_timer : Simulation of sbi_timer with SBI VIP
 

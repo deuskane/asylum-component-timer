@@ -1,3 +1,3 @@
 FILE_CORE	?= timer.core
-TARGET          ?= sim_basic
+TARGET          ?= sim_sbi_timer
 TOOL		?= ghdl

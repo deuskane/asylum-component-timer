@@ -12,8 +12,8 @@
 --              * stop with control.enable = 0 and timer_disable_i
 --              * auto-reload period (control.autostart)
 --              * ISR (rw1c) / IMR behaviour and it_o
---              The current counter value is not software visible : it is
---              checked with a VHDL-2008 external name on timer_cnt_r.
+--              The current counter value is not software visible, so the DUT
+--              exports a debug counter value for the self-checking bench.
 -------------------------------------------------------------------------------
 -- Revisions  :
 -- Date        Version  Author   Description
@@ -66,8 +66,12 @@ architecture sim of tb_sbi_timer is
   signal timer_disable_i   : std_logic := '0';
   signal timer_clear_i     : std_logic := '0';
   signal it_o              : std_logic;
+  signal timer_cnt_o       : std_logic_vector(31 downto 0) := (others => '0');
+  signal timer_cnt         : unsigned(31 downto 0) := (others => '0');
 
 begin
+
+  timer_cnt <= unsigned(timer_cnt_o);
 
   clock_generator(clk_i, clk_ena, C_CLK_PERIOD, "TB Clock");
 
@@ -79,13 +83,14 @@ begin
       NAME            => "TIMER"
     )
     port map (
-      clk_i           => clk_i
-     ,arst_b_i        => arst_b_i
-     ,sbi_ini_i       => sbi_ini
-     ,sbi_tgt_o       => sbi_tgt
-     ,timer_disable_i => timer_disable_i
-     ,timer_clear_i   => timer_clear_i
-     ,it_o            => it_o
+      clk_i           => clk_i,
+      arst_b_i        => arst_b_i,
+      sbi_ini_i       => sbi_ini,
+      sbi_tgt_o       => sbi_tgt,
+      timer_disable_i => timer_disable_i,
+      timer_clear_i   => timer_clear_i,
+      timer_cnt_o     => timer_cnt_o,
+      it_o            => it_o
     );
 
   sbi_ini.cs                          <= sbi_if.cs;
@@ -100,9 +105,6 @@ begin
   -- Sequencer
   -----------------------------------------------------------------------------
   p_main : process
-    -- Current counter value (not software visible)
-    alias timer_cnt is <<signal .tb_sbi_timer.ins_dut.ins_timer.timer_cnt_r : unsigned(31 downto 0)>>;
-
     variable v_cycles : natural;
     variable v_cnt    : unsigned(31 downto 0);
 

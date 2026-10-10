@@ -40,6 +40,9 @@ entity timer is
     timer_disable_i  : in    std_logic;
     timer_clear_i    : in    std_logic;
 
+    -- Debug
+    timer_cnt_o      : out   std_logic_vector(31 downto 0);
+
     -- To/From IT Ctrl
     it_o             : out   std_logic;
 
@@ -96,6 +99,7 @@ begin  -- architecture rtl
   timer_rst     <= sw2hw_i.control.clear(0)  or      timer_clear_i  or timer_restart;
   timer_done    <= '1' when timer_cnt_r = 0 else '0';
   timer_restart <= sw2hw_i.control.autostart(0) and timer_done;
+  timer_cnt_o   <= std_logic_vector(timer_cnt_r);
   
   ---------------------------------------------
   -- Interruption

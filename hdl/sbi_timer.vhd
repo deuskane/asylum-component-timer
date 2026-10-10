@@ -45,6 +45,9 @@ entity sbi_timer is
     timer_disable_i  : in    std_logic;
     timer_clear_i    : in    std_logic;
 
+    -- Debug
+    timer_cnt_o      : out   std_logic_vector(31 downto 0);
+
     -- To/From IT Ctrl
     it_o             : out   std_logic
     );
@@ -79,6 +82,7 @@ begin  -- architecture rtl
     hw2sw_o          => hw2sw          ,
     timer_disable_i  => timer_disable_i,
     timer_clear_i    => timer_clear_i  ,
+    timer_cnt_o      => timer_cnt_o    ,
     it_o             => it_o           
     );
 

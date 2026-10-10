@@ -23,6 +23,9 @@ component sbi_timer is
     timer_disable_i  : in    std_logic;
     timer_clear_i    : in    std_logic;
 
+    -- Debug
+    timer_cnt_o      : out   std_logic_vector(31 downto 0);
+
     -- To/From IT Ctrl
     it_o             : out   std_logic
     );
@@ -38,6 +41,9 @@ component timer is
     -- External Interface
     timer_disable_i  : in    std_logic;
     timer_clear_i    : in    std_logic;
+
+    -- Debug
+    timer_cnt_o      : out   std_logic_vector(31 downto 0);
 
     -- To/From IT Ctrl
     it_o             : out   std_logic;

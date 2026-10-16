@@ -64,6 +64,8 @@ architecture rtl of timer is
   signal timer_cke     : std_logic;
   signal timer_done    : std_logic;
   signal timer_restart : std_logic;
+  signal timer_dec_r   : std_logic;
+  signal timer_event   : std_logic;
 
   signal gic_it        : std_logic_vector(1-1 downto 0);
   
@@ -102,12 +104,31 @@ begin  -- architecture rtl
   timer_cnt_o   <= std_logic_vector(timer_cnt_r);
   
   ---------------------------------------------
+  -- Timer event
+  -- One cycle pulse when the counter reaches 0 by a decrement.
+  -- A counter held at 0 (one-shot done, stopped, loaded with 0)
+  -- is not an event.
+  ---------------------------------------------
+  process (clk_i, arst_b_i)
+  begin
+    if (arst_b_i = '0')
+    then
+      timer_dec_r <= '0';
+    elsif (rising_edge(clk_i))
+    then
+      timer_dec_r <= timer_cke and not timer_done and not timer_rst;
+    end if;
+  end process;
+
+  timer_event   <= timer_done and timer_dec_r;
+
+  ---------------------------------------------
   -- Interruption
   ---------------------------------------------
 
   hw2sw_o.isr.we    <= '1';
 
-  gic_it(0)         <= timer_done;
+  gic_it(0)         <= timer_event;
   
   ins_GIC_core : GIC_core
   port map(

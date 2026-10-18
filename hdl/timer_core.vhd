@@ -58,7 +58,7 @@ architecture rtl of timer is
   ---------------------------------------------
   -- Register
   ---------------------------------------------
-  signal timer_init    : std_logic_vector(32-1 downto 0);
+  signal timer_init_r  : std_logic_vector(32-1 downto 0);
   signal timer_cnt_r   : unsigned        (32-1 downto 0);
   signal timer_rst     : std_logic;
   signal timer_cke     : std_logic;
@@ -72,10 +72,24 @@ begin  -- architecture rtl
   ---------------------------------------------
   -- Timer counter
   ---------------------------------------------
-  timer_init <= sw2hw_i.timer_byte3.value &
-                sw2hw_i.timer_byte2.value &
-                sw2hw_i.timer_byte1.value &
-                sw2hw_i.timer_byte0.value;
+  -- The 32-bit initial value is updated at once on the write of byte3
+  -- (written last) : a reload never uses a partially written value
+  process (clk_i, arst_b_i)
+  begin
+    if (arst_b_i = '0')
+    then
+      timer_init_r <= (others => '0');
+    elsif (rising_edge(clk_i))
+    then
+      if (sw2hw_i.timer_byte3.we = '1')
+      then
+        timer_init_r <= sw2hw_i.timer_byte3.value &
+                        sw2hw_i.timer_byte2.value &
+                        sw2hw_i.timer_byte1.value &
+                        sw2hw_i.timer_byte0.value;
+      end if;
+    end if;
+  end process;
   
   process (clk_i)
   begin
@@ -83,7 +97,7 @@ begin  -- architecture rtl
     then
       if (timer_rst = '1')
       then
-        timer_cnt_r <= unsigned(timer_init);
+        timer_cnt_r <= unsigned(timer_init_r);
       elsif (timer_cke  = '1' and
              timer_done = '0')
       then

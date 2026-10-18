@@ -211,6 +211,7 @@ Notes:
 
 - `control.clear` resets to 1: after reset the counter is held at the initial value until software clears this bit.
 - `timer_byte0` is the least significant byte of the 32-bit initial value. The current counter value is not readable.
+- The 32-bit initial value is taken into account at once on the write of `timer_byte3`: write `timer_byte0..2` first and `timer_byte3` last, so that a reload (`control.clear`, `timer_clear_i` or auto-reload) never uses a partially written value.
 - `isr` / `imr` have a single bit (counter reached 0).
 
 ## Verification
@@ -219,7 +220,7 @@ Notes:
 
 | File | DUT | Description |
 |------|-----|-------------|
-| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (131 checks): (1) reset value of every CSR, `it_o` and counter; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, `isr` set again after a rw1c clear while the counter is 0, masked / unmasked behaviour; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, no interrupt while masked, reload by `timer_clear_i`; (7) initial value 0; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
+| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (134 checks): (1) reset value of every CSR, `it_o` and counter; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable, initial value updated only on the write of `timer_byte3`; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, `isr` set again after a rw1c clear while the counter is 0, masked / unmasked behaviour; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, no interrupt while masked, reload by `timer_clear_i`; (7) initial value 0; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
 
 ### Targets
 
@@ -255,7 +256,7 @@ No dedicated synthesis target. The HDL sources of the `default` target (`hdl/*.v
 
 ### Counter Operation (timer)
 
-- Initial value: `timer_byte3 & timer_byte2 & timer_byte1 & timer_byte0`.
+- Initial value: `timer_byte3 & timer_byte2 & timer_byte1 & timer_byte0`, copied into a 32-bit register on the write of `timer_byte3` (atomic update).
 - Reload (priority): `control.clear or timer_clear_i or (control.autostart and done)`.
 - Decrement: `control.enable = 1`, `timer_disable_i = 0` and counter /= 0.
 - `done` = counter equals 0; it is the interrupt source.

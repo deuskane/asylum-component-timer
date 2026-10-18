@@ -45,6 +45,8 @@ architecture sim of tb_sbi_timer is
   constant ADDR_WIDTH      : natural := TIMER_ADDR_WIDTH;
   constant DATA_WIDTH      : natural := TIMER_DATA_WIDTH;
   constant C_SETTLE        : time    := 1 ns;   -- delay after a clock edge to sample settled outputs
+  constant C_TIMEOUT       : time    := 40 * C_CLK_PERIOD; -- longest wait for a timer event (period 31)
+  constant C_WATCHDOG      : time    := 100 us; -- whole test (about 21 us)
 
   -- control register value : [0] clear, [1] enable, [2] autostart
   constant CTRL_CLEAR      : std_logic_vector(7 downto 0) := x"01";
@@ -69,11 +71,16 @@ architecture sim of tb_sbi_timer is
   signal timer_cnt_o       : std_logic_vector(31 downto 0) := (others => '0');
   signal timer_cnt         : unsigned(31 downto 0) := (others => '0');
 
+  signal watchdog_ctrl     : t_watchdog_ctrl := C_WATCHDOG_CTRL_DEFAULT;
+
 begin
 
   timer_cnt <= unsigned(timer_cnt_o);
 
   clock_generator(clk_i, clk_ena, C_CLK_PERIOD, "TB Clock");
+
+  -- A hung wait fails the simulation instead of running forever
+  watchdog_timer(watchdog_ctrl, C_WATCHDOG, ERROR, "Testbench watchdog");
 
   -----------------------------------------------------------------------------
   -- DUT
@@ -107,6 +114,7 @@ begin
   p_main : process
     variable v_cycles : natural;
     variable v_cnt    : unsigned(31 downto 0);
+    variable v_wait   : natural;
 
     procedure clk_wait(n : natural) is
     begin
@@ -322,7 +330,8 @@ begin
     sbi_check(TIMER_CONTROL, x"06", "Read control", clk_i, sbi_if);
 
     -- reload checked on the counter
-    wait until timer_cnt = 0;
+    wait until timer_cnt = 0 for C_TIMEOUT;
+    check_cnt(0, "Counter reached 0");
     wait until rising_edge(clk_i);
     wait for C_SETTLE;
     check_cnt(30, "Auto-reload with init the cycle after 0");
@@ -333,18 +342,22 @@ begin
     -- period between 2 interrupts
     for i in 0 to 2 loop
       if it_o = '0' then
-        wait until it_o = '1';
+        wait until it_o = '1' for C_TIMEOUT;
       end if;
+      check_value(it_o, '1', ERROR, "it_o asserted within one period");
       wait until rising_edge(clk_i);  -- it_o rose before this edge
       sbi_write(TIMER_ISR, x"01", "Clear isr", clk_i, sbi_if);
       wait for C_SETTLE;
       check_value(it_o, '0', ERROR, "it_o cleared");
       -- isr (and it_o) are set on the edge after each counter = 0
       v_cycles := 0;
-      while timer_cnt /= 0 loop
+      v_wait   := 0;
+      while timer_cnt /= 0 and v_wait < 40 loop
         wait until rising_edge(clk_i);
         wait for C_SETTLE;
+        v_wait   := v_wait + 1;
       end loop;
+      check_cnt(0, "Counter back to 0 within one period");
       for j in 1 to 31 loop
         wait until rising_edge(clk_i);
         wait for C_SETTLE;

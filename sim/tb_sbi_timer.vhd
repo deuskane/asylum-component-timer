@@ -166,7 +166,6 @@ begin
     ------------------------------------------------
     log(ID_LOG_HDR, "1. Reset values", C_SCOPE);
     ------------------------------------------------
-    sbi_check(TIMER_ISR        , x"00", "Reset value isr"        , clk_i, sbi_if);
     sbi_check(TIMER_IMR        , x"00", "Reset value imr"        , clk_i, sbi_if);
     sbi_check(TIMER_CONTROL    , x"01", "Reset value control (clear=1)", clk_i, sbi_if);
     sbi_check(TIMER_TIMER_BYTE0, x"00", "Reset value timer_byte0", clk_i, sbi_if);
@@ -175,6 +174,9 @@ begin
     sbi_check(TIMER_TIMER_BYTE3, x"00", "Reset value timer_byte3", clk_i, sbi_if);
     check_value(it_o, '0', ERROR, "it_o inactive after reset");
     check_cnt(0, "Counter loaded with 0 after reset");
+    -- imr only masks it_o : the counter at 0 sets the status
+    sbi_check(TIMER_ISR, x"01", "isr set by counter = 0 (not masked at capture)", clk_i, sbi_if);
+    check_value(it_o, '0', ERROR, "it_o masked by imr = 0");
 
     ------------------------------------------------
     log(ID_LOG_HDR, "2. Register read / write", C_SCOPE);
@@ -201,6 +203,7 @@ begin
     sbi_write(TIMER_CONTROL, CTRL_CLEAR, "Write control clear", clk_i, sbi_if);
     sbi_check(TIMER_CONTROL, CTRL_CLEAR, "Read control", clk_i, sbi_if);
 
+    sbi_write(TIMER_ISR, x"01", "Clear isr (counter /= 0)", clk_i, sbi_if);
     sbi_write(TIMER_IMR, x"FF", "Write imr 0xFF", clk_i, sbi_if);
     sbi_check(TIMER_IMR, x"01", "Read imr (1 bit implemented)", clk_i, sbi_if);
     sbi_check(TIMER_ISR, x"00", "isr still 0 (counter /= 0)", clk_i, sbi_if);
@@ -246,19 +249,18 @@ begin
     clk_wait(2);
     sbi_check(TIMER_ISR, x"01", "isr set again (one-shot done is a level)", clk_i, sbi_if);
 
-    -- masked : clear isr, it stays cleared
+    -- masked : it_o drops at once, isr still records the source (polling)
     sbi_write(TIMER_IMR, x"00", "Mask interrupt"   , clk_i, sbi_if);
+    wait for C_SETTLE;
+    check_value(it_o, '0', ERROR, "it_o inactive when masked (isr pending)");
     sbi_write(TIMER_ISR, x"01", "Clear isr"        , clk_i, sbi_if);
-    sbi_check(TIMER_ISR, x"00", "isr cleared (masked)", clk_i, sbi_if);
-    clk_wait(2);
-    check_value(it_o, '0', ERROR, "it_o inactive when isr cleared");
     clk_wait(20);
-    sbi_check(TIMER_ISR, x"00", "isr stays cleared while masked", clk_i, sbi_if);
+    sbi_check(TIMER_ISR, x"01", "isr set again while masked (done still active)", clk_i, sbi_if);
     check_value(it_o, '0', ERROR, "it_o stays inactive while masked");
-    -- unmask : pending source captured
+    -- unmask : pending status drives it_o
     sbi_write(TIMER_IMR, x"01", "Unmask interrupt", clk_i, sbi_if);
-    clk_wait(2);
-    check_value(it_o, '1', ERROR, "it_o active after unmask (done still active)");
+    wait for C_SETTLE;
+    check_value(it_o, '1', ERROR, "it_o active after unmask (isr pending)");
     sbi_check(TIMER_ISR, x"01", "isr set after unmask", clk_i, sbi_if);
 
     ------------------------------------------------
@@ -361,12 +363,13 @@ begin
       check_cnt(0, "Counter back to 0 after init+1 = 31 cycles");
     end loop;
 
-    -- autostart with imr=0 : no interrupt
+    -- autostart with imr=0 : isr set (polling), no interrupt
     sbi_write(TIMER_IMR, x"00", "Mask interrupt", clk_i, sbi_if);
     sbi_write(TIMER_ISR, x"01", "Clear isr", clk_i, sbi_if);
     clk_wait(100);
-    sbi_check(TIMER_ISR, x"00", "Masked : isr not set by the auto-reload", clk_i, sbi_if);
+    sbi_check(TIMER_ISR, x"01", "Masked : isr set by the auto-reload (polling)", clk_i, sbi_if);
     check_value(it_o, '0', ERROR, "Masked : it_o inactive");
+    sbi_write(TIMER_ISR, x"01", "Clear isr", clk_i, sbi_if);
     sbi_write(TIMER_IMR, x"01", "Unmask interrupt", clk_i, sbi_if);
     count_until_it(v_cycles, 40, "Unmasked auto-reload");
     check_value(v_cycles <= 32, ERROR, "Interrupt within one period after unmask");
@@ -394,9 +397,9 @@ begin
     check_value(it_o, '1', ERROR, "it_o active");
     sbi_write(TIMER_IMR, x"00", "Mask interrupt", clk_i, sbi_if);
     sbi_write(TIMER_ISR, x"01", "Clear isr", clk_i, sbi_if);
-    sbi_check(TIMER_ISR, x"00", "isr cleared", clk_i, sbi_if);
     clk_wait(2);
-    check_value(it_o, '0', ERROR, "it_o inactive at end of test");
+    sbi_check(TIMER_ISR, x"01", "isr set again while masked (counter = 0)", clk_i, sbi_if);
+    check_value(it_o, '0', ERROR, "it_o inactive at end of test (masked)");
 
     ------------------------------------------------
     log(ID_LOG_HDR, "8. Asynchronous reset", C_SCOPE);
@@ -413,9 +416,9 @@ begin
     sbi_check(TIMER_CONTROL    , x"01", "control after reset"    , clk_i, sbi_if);
     sbi_check(TIMER_TIMER_BYTE0, x"00", "timer_byte0 after reset", clk_i, sbi_if);
     sbi_check(TIMER_TIMER_BYTE2, x"00", "timer_byte2 after reset", clk_i, sbi_if);
-    sbi_check(TIMER_ISR        , x"00", "isr after reset"        , clk_i, sbi_if);
+    sbi_check(TIMER_ISR        , x"01", "isr after reset (counter = 0, not masked at capture)", clk_i, sbi_if);
     check_cnt(0, "Counter loaded with 0 after reset");
-    check_value(it_o, '0', ERROR, "it_o after reset");
+    check_value(it_o, '0', ERROR, "it_o after reset (masked by imr = 0)");
 
     log(ID_LOG_HDR, "Simulation Finished", C_SCOPE);
     report_alert_counters(FINAL);

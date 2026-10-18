@@ -26,6 +26,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.ALL;
 library asylum;
+use     asylum.logic_pkg.all;
 use     asylum.timer_csr_pkg.ALL;
 use     asylum.pbi_pkg.all;
 use     asylum.GIC_pkg.all;
@@ -66,6 +67,7 @@ architecture rtl of timer is
   signal timer_restart : std_logic;
 
   signal gic_it        : std_logic_vector(1-1 downto 0);
+  constant ISR_NO_MASK : std_logic_vector(1-1 downto 0) := (others => '1');
   
 begin  -- architecture rtl
 
@@ -109,13 +111,18 @@ begin  -- architecture rtl
 
   gic_it(0)         <= timer_done;
   
+  -- The isr records every event (raw status, can be polled), the imr only
+  -- masks the interrupt output : GIC_core gets no mask, and it_o is the OR
+  -- of the unmasked isr bits (masking a pending interrupt drops it_o).
   ins_GIC_core : GIC_core
   port map(
-    itm_o     => it_o              ,
+    itm_o     => open              ,
     its_i     => gic_it            ,
     isr_i     => sw2hw_i.isr.value ,
     isr_o     => hw2sw_o.isr.value ,
-    imr_i     => sw2hw_i.imr.enable
+    imr_i     => ISR_NO_MASK
     );
+
+  it_o              <= reduce_or(sw2hw_i.isr.value and sw2hw_i.imr.enable);
   
 end architecture rtl;

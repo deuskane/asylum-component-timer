@@ -115,7 +115,7 @@ Top-level entity: **`sbi_timer`** ([hdl/sbi_timer.vhd](hdl/sbi_timer.vhd)), libr
 
 | Name | Direction | Type | Description |
 |------|-----------|------|-------------|
-| `it_o` | out | std_logic | Interrupt request: OR of the `isr` bit |
+| `it_o` | out | std_logic | Interrupt request: OR of the unmasked `isr` bits (`isr and imr`) |
 
 ### Instantiation Example
 
@@ -211,7 +211,7 @@ Notes:
 
 - `control.clear` resets to 1: after reset the counter is held at the initial value until software clears this bit.
 - `timer_byte0` is the least significant byte of the 32-bit initial value. The current counter value is not readable.
-- `isr` / `imr` have a single bit (counter reached 0).
+- `isr` / `imr` have a single bit (counter reached 0). `isr` records the event whatever `imr` (it can be polled); `imr` only masks `it_o`.
 
 ## Verification
 
@@ -219,7 +219,7 @@ Notes:
 
 | File | DUT | Description |
 |------|-----|-------------|
-| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (131 checks): (1) reset value of every CSR, `it_o` and counter; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, `isr` set again after a rw1c clear while the counter is 0, masked / unmasked behaviour; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, no interrupt while masked, reload by `timer_clear_i`; (7) initial value 0; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
+| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (131 checks): (1) reset value of every CSR, `it_o` and counter; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, `isr` set again after a rw1c clear while the counter is 0, masked / unmasked behaviour; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, `isr` set but no interrupt while masked (polling), reload by `timer_clear_i`; (7) initial value 0; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
 
 ### Targets
 
@@ -260,13 +260,13 @@ No dedicated synthesis target. The HDL sources of the `default` target (`hdl/*.v
 - Decrement: `control.enable = 1`, `timer_disable_i = 0` and counter /= 0.
 - `done` = counter equals 0; it is the interrupt source.
 
-With `autostart = 1` the counter reloads the cycle after reaching 0, giving one event every `init + 1` clock cycles. An initial value of 0 makes `done` active as soon as the counter is loaded (also right after reset, where it is masked by `imr = 0`). Without autostart the counter stays at 0 and `done` stays active, so the `isr` bit is set again after a clear as long as the interrupt is unmasked.
+With `autostart = 1` the counter reloads the cycle after reaching 0, giving one event every `init + 1` clock cycles. An initial value of 0 makes `done` active as soon as the counter is loaded (also right after reset: `isr` is set, `it_o` stays masked by `imr = 0`). Without autostart the counter stays at 0 and `done` stays active, so the `isr` bit is set again after a clear.
 
 Typical sequence: write `timer_byte0..3`, write `control = 0x01` (clear, loads the value), then `control = 0x02` (enable) or `0x06` (enable + autostart); unmask with `imr = 0x01`.
 
 ### Interrupts
 
-`GIC_core` computes `isr_next = (imr and done) or isr` every cycle and `it_o = isr`; software clears the bit by writing 1 (rw1c).
+`GIC_core` gets no mask and computes `isr_next = done or isr` every cycle, so `isr` is the raw status and can be polled; `it_o = isr and imr` (masking a pending interrupt drops `it_o`). Software clears the bit by writing 1 (rw1c).
 
 ### Legacy timer_v1
 

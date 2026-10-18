@@ -12,6 +12,7 @@
 --              * stop with control.enable = 0 and timer_disable_i
 --              * auto-reload period (control.autostart)
 --              * ISR (rw1c) / IMR behaviour and it_o
+--              * rw1c clear of isr on the cycle of an auto-reload event
 --              The current counter value is not software visible, so the DUT
 --              exports a debug counter value for the self-checking bench.
 -------------------------------------------------------------------------------
@@ -69,6 +70,12 @@ architecture sim of tb_sbi_timer is
   signal timer_cnt_o       : std_logic_vector(31 downto 0) := (others => '0');
   signal timer_cnt         : unsigned(31 downto 0) := (others => '0');
 
+  -- Monitor : index of the clock edge sampling the last software write of
+  -- isr and the last counter = 0
+  signal edge_cnt          : natural := 0;
+  signal isr_write_edge    : integer := -1;
+  signal cnt_zero_edge     : integer := -1;
+
 begin
 
   timer_cnt <= unsigned(timer_cnt_o);
@@ -101,12 +108,27 @@ begin
   sbi_if.ready                        <= sbi_tgt.ready;
   sbi_if.rdata(DATA_WIDTH-1 downto 0) <= sbi_tgt.rdata;
 
+  p_monitor : process (clk_i)
+  begin
+    if rising_edge(clk_i) then
+      edge_cnt <= edge_cnt + 1;
+      if sbi_ini.cs = '1' and sbi_ini.we = '1' and unsigned(sbi_ini.addr) = TIMER_ISR then
+        isr_write_edge <= edge_cnt;
+      end if;
+      if timer_cnt = 0 then
+        cnt_zero_edge  <= edge_cnt;
+      end if;
+    end if;
+  end process p_monitor;
+
   -----------------------------------------------------------------------------
   -- Sequencer
   -----------------------------------------------------------------------------
   p_main : process
     variable v_cycles : natural;
     variable v_cnt    : unsigned(31 downto 0);
+    variable v_hit    : natural;
+    variable v_edge   : natural;
 
     procedure clk_wait(n : natural) is
     begin
@@ -360,6 +382,32 @@ begin
       check_value(v_cycles, 1, ERROR, "isr set 1 cycle after counter = 0 (period " & to_string(i) & ")");
       check_cnt(0, "Counter back to 0 after init+1 = 31 cycles");
     end loop;
+
+    -- rw1c clear of isr around the event, the phase sweeps the cycle of the
+    -- event : an event sampled on the same edge as the clear is not lost
+    v_hit := 0;
+    for i in 0 to 7 loop
+      wait until timer_cnt = 4 for 40*C_CLK_PERIOD;
+      check_value(timer_cnt = 4, ERROR, "Counter at 4 before the event");
+      v_edge := edge_cnt;
+      clk_wait(i);
+      sbi_write(TIMER_ISR, x"01", "Clear isr, phase " & to_string(i), clk_i, sbi_if);
+      -- the event and its replay are over, the next event is ~30 cycles away
+      while edge_cnt < v_edge + 16 loop
+        wait until rising_edge(clk_i);
+      end loop;
+      wait for C_SETTLE;
+      log(ID_SEQUENCER, "Phase " & to_string(i) & " : isr write on edge " & to_string(isr_write_edge) & ", counter = 0 on edge " & to_string(cnt_zero_edge), C_SCOPE);
+      if cnt_zero_edge >= isr_write_edge then
+        if cnt_zero_edge = isr_write_edge then
+          v_hit := v_hit + 1;
+        end if;
+        sbi_check(TIMER_ISR, x"01", "Event on or after the clear : isr set (phase " & to_string(i) & ")", clk_i, sbi_if);
+      else
+        sbi_check(TIMER_ISR, x"00", "Event before the clear : isr cleared (phase " & to_string(i) & ")", clk_i, sbi_if);
+      end if;
+    end loop;
+    check_value(v_hit > 0, ERROR, "A rw1c clear of isr coincided with an event");
 
     -- autostart with imr=0 : no interrupt
     sbi_write(TIMER_IMR, x"00", "Mask interrupt", clk_i, sbi_if);

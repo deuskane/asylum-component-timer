@@ -64,6 +64,7 @@ architecture rtl of timer is
   signal timer_cke     : std_logic;
   signal timer_done    : std_logic;
   signal timer_restart : std_logic;
+  signal timer_it_r    : std_logic;
 
   signal gic_it        : std_logic_vector(1-1 downto 0);
   
@@ -107,7 +108,21 @@ begin  -- architecture rtl
 
   hw2sw_o.isr.we    <= '1';
 
-  gic_it(0)         <= timer_done;
+  -- An event on the cycle of a software rw1c clear of isr is lost
+  -- (the clear wins in csr_reg) : replay it on the next cycle.
+  -- sw2hw_i.isr.we flags a software write of isr on the previous cycle.
+  process (clk_i, arst_b_i)
+  begin
+    if (arst_b_i = '0')
+    then
+      timer_it_r <= '0';
+    elsif (rising_edge(clk_i))
+    then
+      timer_it_r <= timer_done;
+    end if;
+  end process;
+
+  gic_it(0)         <= timer_done or (timer_it_r and sw2hw_i.isr.we);
   
   ins_GIC_core : GIC_core
   port map(

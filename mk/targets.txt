@@ -1,3 +1,5 @@
-default       : Default Target
-sim_sbi_timer : Simulation of sbi_timer with SBI VIP
+default         : Default Target
+lint_ghdl       : Lint with GHDL (-Wall analysis and elaboration of sbi_timer_synth_top)
+lint_ghdl_synth : Synthesis check, ghdl --synth -Wall of sbi_timer_synth_top (2 configurations)
+sim_sbi_timer   : Simulation of sbi_timer with SBI VIP
 

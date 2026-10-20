@@ -227,6 +227,8 @@ Notes:
 |--------|----------|-------------|
 | `default` | `timer` | HDL fileset + CSR generation (not a simulation) |
 | `sim_sbi_timer` | `tb_sbi_timer` | Simulation of `sbi_timer` with the SBI VIP (GHDL) |
+| `lint_ghdl` | `sbi_timer_synth_top` | Lint: GHDL `-Wall` analysis and elaboration (empty simulation) of `sbi_timer` (flat SBI ports) and the legacy `timer_v1` in a wrapper (`syn/ghdl/sbi_timer_synth_top.vhd`) |
+| `lint_ghdl_synth` | `sbi_timer_synth_top` | Synthesis check: `lint_ghdl`, then `ghdl --synth -Wall` of 2 configurations (`syn/ghdl/ghdl_synth.sh`: defaults, `timer_v1` with `IT_ENABLE = true` and `TICK = 10`), fails on a synthesis error or an inferred latch |
 
 ### How to Run
 
@@ -236,6 +238,8 @@ The default tool is GHDL (`mk/defs.mk`: `TOOL ?= ghdl`, `TARGET ?= sim_sbi_timer
 make help                 # variables, rules and target list (mk/targets.txt)
 make sim_sbi_timer        # run one target (log in log/)
 make nonreg_sim           # run every sim_* target
+make lint_ghdl            # GHDL -Wall lint (make nonreg_lint: every lint_* target)
+make lint_ghdl_synth      # GHDL -Wall lint + ghdl --synth -Wall check
 make clean                # remove build/ and log/
 ```
 
@@ -249,7 +253,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `sim_sbi_timer`.
 
 ## Synthesis
 
-No dedicated synthesis target. The HDL sources of the `default` target (`hdl/*.vhd`, VHDL-2008, + generated CSR) contain no simulation-only construct and are synthesizable; note that `timer_v1` is also part of the `files_hdl` fileset. `sbi_timer` has no resource-relevant generic (fixed 32-bit counter, 8-bit CSR bank).
+No vendor synthesis target (`lint_ghdl_synth` checks the RTL with `ghdl --synth`, see [Targets](#targets)). The HDL sources of the `default` target (`hdl/*.vhd`, VHDL-2008, + generated CSR) contain no simulation-only construct and are synthesizable; note that `timer_v1` is also part of the `files_hdl` fileset. `sbi_timer` has no resource-relevant generic (fixed 32-bit counter, 8-bit CSR bank).
 
 ## Design Notes
 
@@ -296,8 +300,11 @@ asylum-component-timer/
 │       ├── timer_csr_pkg.vhd # Generated
 │       ├── timer_csr.md      # Generated
 │       └── timer_csr.h       # Generated
-└── sim/
-    └── tb_sbi_timer.vhd    # UVVM testbench of sbi_timer
+├── sim/
+│   └── tb_sbi_timer.vhd    # UVVM testbench of sbi_timer
+└── syn/ghdl/
+    ├── sbi_timer_synth_top.vhd  # Lint / synthesis check top (flat SBI ports + timer_v1)
+    └── ghdl_synth.sh       # ghdl --synth check (post_run hook of lint_ghdl_synth)
 ```
 
 ## Dependencies

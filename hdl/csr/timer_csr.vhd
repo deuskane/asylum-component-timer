@@ -84,7 +84,6 @@ architecture rtl of timer_registers is
   signal   imr_we        : std_logic;
   signal   imr_wdata     : std_logic_vector(8-1 downto 0);
   signal   imr_wdata_sw  : std_logic_vector(1-1 downto 0);
-  signal   imr_wdata_hw  : std_logic_vector(1-1 downto 0);
   signal   imr_wbusy     : std_logic;
 
   signal   imr_rcs       : std_logic;
@@ -108,7 +107,6 @@ architecture rtl of timer_registers is
   signal   control_we        : std_logic;
   signal   control_wdata     : std_logic_vector(8-1 downto 0);
   signal   control_wdata_sw  : std_logic_vector(3-1 downto 0);
-  signal   control_wdata_hw  : std_logic_vector(3-1 downto 0);
   signal   control_wbusy     : std_logic;
 
   signal   control_rcs       : std_logic;
@@ -130,7 +128,6 @@ architecture rtl of timer_registers is
   signal   timer_byte0_we        : std_logic;
   signal   timer_byte0_wdata     : std_logic_vector(8-1 downto 0);
   signal   timer_byte0_wdata_sw  : std_logic_vector(8-1 downto 0);
-  signal   timer_byte0_wdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte0_wbusy     : std_logic;
 
   signal   timer_byte0_rcs       : std_logic;
@@ -152,7 +149,6 @@ architecture rtl of timer_registers is
   signal   timer_byte1_we        : std_logic;
   signal   timer_byte1_wdata     : std_logic_vector(8-1 downto 0);
   signal   timer_byte1_wdata_sw  : std_logic_vector(8-1 downto 0);
-  signal   timer_byte1_wdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte1_wbusy     : std_logic;
 
   signal   timer_byte1_rcs       : std_logic;
@@ -174,7 +170,6 @@ architecture rtl of timer_registers is
   signal   timer_byte2_we        : std_logic;
   signal   timer_byte2_wdata     : std_logic_vector(8-1 downto 0);
   signal   timer_byte2_wdata_sw  : std_logic_vector(8-1 downto 0);
-  signal   timer_byte2_wdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte2_wbusy     : std_logic;
 
   signal   timer_byte2_rcs       : std_logic;
@@ -196,7 +191,6 @@ architecture rtl of timer_registers is
   signal   timer_byte3_we        : std_logic;
   signal   timer_byte3_wdata     : std_logic_vector(8-1 downto 0);
   signal   timer_byte3_wdata_sw  : std_logic_vector(8-1 downto 0);
-  signal   timer_byte3_wdata_hw  : std_logic_vector(8-1 downto 0);
   signal   timer_byte3_wbusy     : std_logic;
 
   signal   timer_byte3_rcs       : std_logic;
@@ -245,8 +239,9 @@ begin  -- architecture rtl
     isr_rcs     <= '1' when (sig_raddr = timer_ISR) else '0';
     isr_re      <= sig_rcs and sig_re and isr_rcs;
     isr_rdata   <= (
-      0 => isr_rdata_sw(0), -- value(0)
-      others => '0');
+       0 => isr_rdata_sw(0) -- value(0)
+      ,others => '0'
+      );
 
     isr_wcs     <= '1' when       (sig_waddr = timer_ISR)   else '0';
     isr_we      <= sig_wcs and sig_we and isr_wcs;
@@ -312,8 +307,9 @@ begin  -- architecture rtl
     imr_rcs     <= '1' when (sig_raddr = timer_IMR) else '0';
     imr_re      <= sig_rcs and sig_re and imr_rcs;
     imr_rdata   <= (
-      0 => imr_rdata_sw(0), -- enable(0)
-      others => '0');
+       0 => imr_rdata_sw(0) -- enable(0)
+      ,others => '0'
+      );
 
     imr_wcs     <= '1' when       (sig_waddr = timer_IMR)   else '0';
     imr_we      <= sig_wcs and sig_we and imr_wcs;
@@ -390,10 +386,11 @@ begin  -- architecture rtl
     control_rcs     <= '1' when (sig_raddr = timer_CONTROL) else '0';
     control_re      <= sig_rcs and sig_re and control_rcs;
     control_rdata   <= (
-      0 => control_rdata_sw(0), -- clear(0)
-      1 => control_rdata_sw(1), -- enable(0)
-      2 => control_rdata_sw(2), -- autostart(0)
-      others => '0');
+       0 => control_rdata_sw(0) -- clear(0)
+      ,1 => control_rdata_sw(1) -- enable(0)
+      ,2 => control_rdata_sw(2) -- autostart(0)
+      ,others => '0'
+      );
 
     control_wcs     <= '1' when       (sig_waddr = timer_CONTROL)   else '0';
     control_we      <= sig_wcs and sig_we and control_wcs;
@@ -464,15 +461,15 @@ begin  -- architecture rtl
     timer_byte0_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE0) else '0';
     timer_byte0_re      <= sig_rcs and sig_re and timer_byte0_rcs;
     timer_byte0_rdata   <= (
-      0 => timer_byte0_rdata_sw(0), -- value(0)
-      1 => timer_byte0_rdata_sw(1), -- value(1)
-      2 => timer_byte0_rdata_sw(2), -- value(2)
-      3 => timer_byte0_rdata_sw(3), -- value(3)
-      4 => timer_byte0_rdata_sw(4), -- value(4)
-      5 => timer_byte0_rdata_sw(5), -- value(5)
-      6 => timer_byte0_rdata_sw(6), -- value(6)
-      7 => timer_byte0_rdata_sw(7), -- value(7)
-      others => '0');
+       0 => timer_byte0_rdata_sw(0) -- value(0)
+      ,1 => timer_byte0_rdata_sw(1) -- value(1)
+      ,2 => timer_byte0_rdata_sw(2) -- value(2)
+      ,3 => timer_byte0_rdata_sw(3) -- value(3)
+      ,4 => timer_byte0_rdata_sw(4) -- value(4)
+      ,5 => timer_byte0_rdata_sw(5) -- value(5)
+      ,6 => timer_byte0_rdata_sw(6) -- value(6)
+      ,7 => timer_byte0_rdata_sw(7) -- value(7)
+      );
 
     timer_byte0_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE0)   else '0';
     timer_byte0_we      <= sig_wcs and sig_we and timer_byte0_wcs;
@@ -537,15 +534,15 @@ begin  -- architecture rtl
     timer_byte1_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE1) else '0';
     timer_byte1_re      <= sig_rcs and sig_re and timer_byte1_rcs;
     timer_byte1_rdata   <= (
-      0 => timer_byte1_rdata_sw(0), -- value(0)
-      1 => timer_byte1_rdata_sw(1), -- value(1)
-      2 => timer_byte1_rdata_sw(2), -- value(2)
-      3 => timer_byte1_rdata_sw(3), -- value(3)
-      4 => timer_byte1_rdata_sw(4), -- value(4)
-      5 => timer_byte1_rdata_sw(5), -- value(5)
-      6 => timer_byte1_rdata_sw(6), -- value(6)
-      7 => timer_byte1_rdata_sw(7), -- value(7)
-      others => '0');
+       0 => timer_byte1_rdata_sw(0) -- value(0)
+      ,1 => timer_byte1_rdata_sw(1) -- value(1)
+      ,2 => timer_byte1_rdata_sw(2) -- value(2)
+      ,3 => timer_byte1_rdata_sw(3) -- value(3)
+      ,4 => timer_byte1_rdata_sw(4) -- value(4)
+      ,5 => timer_byte1_rdata_sw(5) -- value(5)
+      ,6 => timer_byte1_rdata_sw(6) -- value(6)
+      ,7 => timer_byte1_rdata_sw(7) -- value(7)
+      );
 
     timer_byte1_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE1)   else '0';
     timer_byte1_we      <= sig_wcs and sig_we and timer_byte1_wcs;
@@ -610,15 +607,15 @@ begin  -- architecture rtl
     timer_byte2_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE2) else '0';
     timer_byte2_re      <= sig_rcs and sig_re and timer_byte2_rcs;
     timer_byte2_rdata   <= (
-      0 => timer_byte2_rdata_sw(0), -- value(0)
-      1 => timer_byte2_rdata_sw(1), -- value(1)
-      2 => timer_byte2_rdata_sw(2), -- value(2)
-      3 => timer_byte2_rdata_sw(3), -- value(3)
-      4 => timer_byte2_rdata_sw(4), -- value(4)
-      5 => timer_byte2_rdata_sw(5), -- value(5)
-      6 => timer_byte2_rdata_sw(6), -- value(6)
-      7 => timer_byte2_rdata_sw(7), -- value(7)
-      others => '0');
+       0 => timer_byte2_rdata_sw(0) -- value(0)
+      ,1 => timer_byte2_rdata_sw(1) -- value(1)
+      ,2 => timer_byte2_rdata_sw(2) -- value(2)
+      ,3 => timer_byte2_rdata_sw(3) -- value(3)
+      ,4 => timer_byte2_rdata_sw(4) -- value(4)
+      ,5 => timer_byte2_rdata_sw(5) -- value(5)
+      ,6 => timer_byte2_rdata_sw(6) -- value(6)
+      ,7 => timer_byte2_rdata_sw(7) -- value(7)
+      );
 
     timer_byte2_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE2)   else '0';
     timer_byte2_we      <= sig_wcs and sig_we and timer_byte2_wcs;
@@ -683,15 +680,15 @@ begin  -- architecture rtl
     timer_byte3_rcs     <= '1' when (sig_raddr = timer_TIMER_BYTE3) else '0';
     timer_byte3_re      <= sig_rcs and sig_re and timer_byte3_rcs;
     timer_byte3_rdata   <= (
-      0 => timer_byte3_rdata_sw(0), -- value(0)
-      1 => timer_byte3_rdata_sw(1), -- value(1)
-      2 => timer_byte3_rdata_sw(2), -- value(2)
-      3 => timer_byte3_rdata_sw(3), -- value(3)
-      4 => timer_byte3_rdata_sw(4), -- value(4)
-      5 => timer_byte3_rdata_sw(5), -- value(5)
-      6 => timer_byte3_rdata_sw(6), -- value(6)
-      7 => timer_byte3_rdata_sw(7), -- value(7)
-      others => '0');
+       0 => timer_byte3_rdata_sw(0) -- value(0)
+      ,1 => timer_byte3_rdata_sw(1) -- value(1)
+      ,2 => timer_byte3_rdata_sw(2) -- value(2)
+      ,3 => timer_byte3_rdata_sw(3) -- value(3)
+      ,4 => timer_byte3_rdata_sw(4) -- value(4)
+      ,5 => timer_byte3_rdata_sw(5) -- value(5)
+      ,6 => timer_byte3_rdata_sw(6) -- value(6)
+      ,7 => timer_byte3_rdata_sw(7) -- value(7)
+      );
 
     timer_byte3_wcs     <= '1' when       (sig_waddr = timer_TIMER_BYTE3)   else '0';
     timer_byte3_we      <= sig_wcs and sig_we and timer_byte3_wcs;

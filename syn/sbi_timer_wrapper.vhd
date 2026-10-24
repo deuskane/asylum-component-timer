@@ -1,12 +1,12 @@
 -------------------------------------------------------------------------------
--- Title      : sbi_timer_synth_top
+-- Title      : sbi_timer_wrapper
 -- Project    : Asylum
 -------------------------------------------------------------------------------
--- File       : sbi_timer_synth_top.vhd
+-- File       : sbi_timer_wrapper.vhd
 -- Author     : Mathieu Rosiere
 -------------------------------------------------------------------------------
 -- Description:
--- Synthesis check top (lint_ghdl, lint_ghdl_synth) : sbi_timer with flat and
+-- Wrapper (lint_ghdl, lint_ghdl_synth_*) : sbi_timer with flat and
 -- constrained ports (sbi_timer has unconstrained SBI ports and cannot be a
 -- synthesis top), and the legacy timer_v1 (in the hdl fileset, not
 -- instantiated by sbi_timer). SBI address / data width : SBI_ADDR_WIDTH /
@@ -18,6 +18,7 @@
 -- Revisions  :
 -- Date        Version  Author   Description
 -- 2026-10-20  1.0      mrosiere Created
+-- 2026-10-24  1.1      mrosiere Was sbi_timer_synth_top, library asylum
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -25,7 +26,7 @@ use     ieee.std_logic_1164.all;
 library asylum;
 use     asylum.sbi_pkg.all;
 
-entity sbi_timer_synth_top is
+entity sbi_timer_wrapper is
   generic (
     V1_TICK          : positive := 1000;
     V1_SIZE_ADDR     : natural  := 3;
@@ -63,9 +64,9 @@ entity sbi_timer_synth_top is
     v1_interrupt_o   : out std_logic;
     v1_interrupt_ack_i : in std_logic
   );
-end entity sbi_timer_synth_top;
+end entity sbi_timer_wrapper;
 
-architecture rtl of sbi_timer_synth_top is
+architecture rtl of sbi_timer_wrapper is
 
   signal sbi_ini       : sbi_ini_t(addr (SBI_ADDR_WIDTH-1 downto 0),
                                    wdata(SBI_DATA_WIDTH-1 downto 0));

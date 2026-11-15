@@ -22,9 +22,11 @@ CAPI=2:
 # 2026-10-05  2.0.3    mrosiere Self-checking UVVM bench of sbi_timer (sim_sbi_timer)
 #                               replaces the legacy timer_v1 bench, remove unused
 #                               parameters section
+# 2026-11-15  3.0.0    mrosiere asylum:system:GIC >= 2.0.0 : isr records the event
+#                               whatever imr (polling), imr only masks it_o
 #-----------------------------------------------------------------------------
 
-name        : asylum:component:timer:2.0.3
+name        : asylum:component:timer:3.0.0
 description : Timer
 
 #=========================================
@@ -57,7 +59,7 @@ filesets:
     file_type    : vhdlSource-2008
     logical_name : asylum
     depend       :
-      - asylum:system:GIC
+      - ">=asylum:system:GIC:2.0.0"
       - asylum:utils:generators
       - asylum:utils:pkg
       

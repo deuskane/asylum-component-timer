@@ -60,7 +60,7 @@ filesets:
     logical_name : asylum
     depend       :
       - ">=asylum:system:GIC:2.0.0"
-      - asylum:utils:generators
+      - ">=asylum:utils:generators:2.8.0"
       - asylum:utils:pkg
       
   #---------------------------------------
@@ -72,6 +72,17 @@ filesets:
     file_type : vhdlSource-2008
     depend       :
       - bitvis:verification:uvvm
+
+  #---------------------------------------
+  syn:
+  #---------------------------------------
+    files        :
+      - syn/sbi_timer_wrapper.vhd
+    file_type    : vhdlSource-2008
+    logical_name : asylum
+    # ghdl_synth.sh / ghdl_synth.mk (pre_run hook of lint_ghdl_synth_*)
+    depend       :
+      - asylum:utils:ghdl_synth
 
 #=========================================
 targets:
@@ -89,6 +100,44 @@ targets:
       - gen_csr
 
   #---------------------------------------
+  # Lint : -Wall analysis and elaboration (empty simulation)
+  #---------------------------------------
+  lint_ghdl : &lint_ghdl
+    << : *default
+    description     : Lint with GHDL (-Wall analysis and elaboration of sbi_timer_wrapper)
+    toplevel        : asylum.sbi_timer_wrapper
+    filesets_append : [syn]
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall"]
+
+  #---------------------------------------
+  # Synthesis check : -Wall analysis, ghdl --synth -Wall and elaboration
+  # (no simulation) of sbi_timer_wrapper with the generics of the target.
+  # The pre_run hook (ghdl_synth.sh of asylum:utils:ghdl_synth) adds
+  # ghdl_synth.mk to the edalize Makefile.
+  # FuseSoC merges tools in depth : analyze_options comes from lint_ghdl.
+  #---------------------------------------
+  lint_ghdl_synth_default : &lint_ghdl_synth
+    << : *lint_ghdl
+    description     : Synthesis check of sbi_timer_wrapper, default generics
+    tools :
+      ghdl :
+        run_options     : ["--no-run"]
+    hooks :
+      pre_run : [ghdl_synth]
+
+  #---------------------------------------
+  lint_ghdl_synth_v1_it :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_timer_wrapper, timer_v1 with interrupt, tick 10
+    parameters      :
+      - V1_IT_ENABLE=true
+      - V1_TICK=10
+
+  #---------------------------------------
   sim_sbi_timer:
   #---------------------------------------
     << : *default
@@ -101,3 +150,32 @@ targets:
       ghdl :
         analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
         run_options     : ["--fst=dut.fst","--ieee-asserts=disable"]
+
+#=========================================
+scripts:
+#=========================================
+
+  #---------------------------------------
+  # pre_run hook of lint_ghdl_synth_* (cwd = work_root)
+  #---------------------------------------
+  ghdl_synth :
+    cmd : [bash, ghdl_synth.sh]
+
+#=========================================
+parameters :
+#=========================================
+
+  #---------------------------------------
+  # Generics of sbi_timer_wrapper (lint_ghdl_synth_*)
+  #---------------------------------------
+  V1_TICK :
+    description : timer_v1, tick period (clock cycles)
+    datatype    : int
+    default     : 1000
+    paramtype   : generic
+
+  V1_IT_ENABLE :
+    description : timer_v1, interrupt enable
+    datatype    : bool
+    default     : false
+    paramtype   : generic

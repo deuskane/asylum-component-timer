@@ -8,6 +8,7 @@
 -- Description: UVVM/SBI self-checking testbench for sbi_timer
 --              * reset values and read/write of every CSR
 --              * counter load (control.clear / timer_clear_i)
+--              * 32-bit initial value updated at once on the write of byte3
 --              * one-shot count, exact number of cycles up to it_o
 --              * stop with control.enable = 0 and timer_disable_i
 --              * auto-reload period (control.autostart)
@@ -208,6 +209,28 @@ begin
     check_cnt(x"A55A0FF0", "clear and enable : counter held at init value");
     sbi_write(TIMER_CONTROL, CTRL_CLEAR, "Write control clear", clk_i, sbi_if);
     sbi_check(TIMER_CONTROL, CTRL_CLEAR, "Read control", clk_i, sbi_if);
+
+    -- the initial value is updated on the write of byte3 only
+    sbi_write(TIMER_TIMER_BYTE0, x"11", "Write timer_byte0 only", clk_i, sbi_if);
+    sbi_write(TIMER_TIMER_BYTE1, x"22", "Write timer_byte1 only", clk_i, sbi_if);
+    sbi_write(TIMER_TIMER_BYTE2, x"33", "Write timer_byte2 only", clk_i, sbi_if);
+    clk_wait(2);
+    sbi_check(TIMER_TIMER_BYTE0, x"11", "Read timer_byte0", clk_i, sbi_if);
+    check_cnt(x"A55A0FF0", "byte0..2 written : initial value kept until byte3 is written");
+    sbi_write(TIMER_TIMER_BYTE3, x"44", "Write timer_byte3", clk_i, sbi_if);
+    clk_wait(2);
+    wait for C_SETTLE;
+    check_cnt(x"44332211", "byte3 written : 32-bit initial value updated at once");
+
+    -- control write (clear released) right after the byte3 write : the count
+    -- starts from the new initial value
+    write_init(100, "Write init 100");
+    sbi_write(TIMER_CONTROL, CTRL_ENABLE, "Start right after the byte3 write", clk_i, sbi_if);
+    sbi_write(TIMER_CONTROL, x"00"      , "Stop timer"                       , clk_i, sbi_if);
+    wait for C_SETTLE;
+    v_cnt := timer_cnt;
+    check_value(v_cnt <= 100 and v_cnt >= 95, ERROR, "Count started from the new initial value (" & to_string(to_integer(v_cnt)) & ")");
+    sbi_write(TIMER_CONTROL, CTRL_CLEAR, "Write control clear", clk_i, sbi_if);
 
     sbi_write(TIMER_ISR, x"01", "Clear isr (counter /= 0)", clk_i, sbi_if);
     sbi_write(TIMER_IMR, x"FF", "Write imr 0xFF", clk_i, sbi_if);

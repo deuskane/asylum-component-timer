@@ -21,6 +21,7 @@
 -- 2021-11-20 1.2     mrosiere Fix timer_event_r clear condition	
 -- 2025-11-01 2.0     mrosiere Use CSR, full rework
 -- 2026-11-16 2.1     mrosiere Interrupt event on the counter reaching 0
+-- 2026-11-16 2.2     mrosiere Initial value updated at once on the write of byte3
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -59,6 +60,8 @@ architecture rtl of timer is
   ---------------------------------------------
   -- Register
   ---------------------------------------------
+  signal timer_init_wr : std_logic_vector(32-1 downto 0);
+  signal timer_init_r  : std_logic_vector(32-1 downto 0);
   signal timer_init    : std_logic_vector(32-1 downto 0);
   signal timer_cnt_r   : unsigned        (32-1 downto 0);
   signal timer_rst     : std_logic;
@@ -75,10 +78,32 @@ begin  -- architecture rtl
   ---------------------------------------------
   -- Timer counter
   ---------------------------------------------
-  timer_init <= sw2hw_i.timer_byte3.value &
-                sw2hw_i.timer_byte2.value &
-                sw2hw_i.timer_byte1.value &
-                sw2hw_i.timer_byte0.value;
+  -- The 32-bit initial value is updated at once on the write of byte3
+  -- (written last) : a reload never uses a partially written value.
+  -- The new value is used in the cycle of the byte3 write strobe, so a
+  -- reload right after the write (control.clear released by the next
+  -- access) already uses it.
+  timer_init_wr <= sw2hw_i.timer_byte3.value &
+                   sw2hw_i.timer_byte2.value &
+                   sw2hw_i.timer_byte1.value &
+                   sw2hw_i.timer_byte0.value;
+
+  process (clk_i, arst_b_i)
+  begin
+    if (arst_b_i = '0')
+    then
+      timer_init_r <= (others => '0');
+    elsif (rising_edge(clk_i))
+    then
+      if (sw2hw_i.timer_byte3.we = '1')
+      then
+        timer_init_r <= timer_init_wr;
+      end if;
+    end if;
+  end process;
+
+  timer_init    <= timer_init_wr when (sw2hw_i.timer_byte3.we = '1') else
+                   timer_init_r;
   
   process (clk_i)
   begin

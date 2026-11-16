@@ -211,6 +211,7 @@ Notes:
 
 - `control.clear` resets to 1: after reset the counter is held at the initial value until software clears this bit.
 - `timer_byte0` is the least significant byte of the 32-bit initial value. The current counter value is not readable.
+- The 32-bit initial value is taken into account at once on the write of `timer_byte3`: write `timer_byte0..2` first and `timer_byte3` last, so that a reload (`control.clear`, `timer_clear_i` or auto-reload) never uses a partially written value.
 - `isr` / `imr` have a single bit (counter reached 0). `isr` records the event whatever `imr` (it can be polled); `imr` only masks `it_o`.
 
 ## Verification
@@ -219,7 +220,7 @@ Notes:
 
 | File | DUT | Description |
 |------|-----|-------------|
-| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (137 checks): (1) reset value of every CSR, `it_o` and counter, no interrupt with the counter at 0 after reset; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, masked / unmasked behaviour with `isr` pending, `isr` acknowledged by a rw1c clear although the counter stays at 0, no interrupt on unmask or restart with the counter held at 0; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, `isr` set but no interrupt while masked (polling), reload by `timer_clear_i`; (7) initial value 0: no interrupt, also with autostart; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
+| [sim/tb_sbi_timer.vhd](sim/tb_sbi_timer.vhd) | `sbi_timer` | UVVM testbench with the SBI VIP (`bitvis_vip_sbi`), self-checking (141 checks): (1) reset value of every CSR, `it_o` and counter, no interrupt with the counter at 0 after reset; (2) read / write of `timer_byte0..3`, `control` (3 bits) and `imr` (1 bit), counter following the initial value while `control.clear = 1`, clear has priority over enable, initial value updated only on the write of `timer_byte3` and used by a reload right after it; (3) one-shot count from 20 started by releasing `timer_clear_i`: counter value checked every cycle, `it_o` asserted exactly `init + 1` cycles after the start, counter stays at 0, masked / unmasked behaviour with `isr` pending, `isr` acknowledged by a rw1c clear although the counter stays at 0, no interrupt on unmask or restart with the counter held at 0; (4) freeze with `timer_disable_i` (counter held, `it_o` `remaining + 1` cycles after the release); (5) stop / restart with `control.enable`; (6) auto-reload: reload with the initial value the cycle after 0, period `init + 1` measured on 3 periods, `isr` set but no interrupt while masked (polling), reload by `timer_clear_i`; (7) initial value 0: no interrupt, also with autostart; (8) asynchronous reset while running. The counter is not software visible: it is read with a VHDL-2008 external name (`timer_cnt_r`) |
 
 ### Targets
 
@@ -267,7 +268,7 @@ No vendor synthesis target (the `lint_ghdl_synth_*` targets check the RTL with `
 
 ### Counter Operation (timer)
 
-- Initial value: `timer_byte3 & timer_byte2 & timer_byte1 & timer_byte0`.
+- Initial value: `timer_byte3 & timer_byte2 & timer_byte1 & timer_byte0`, copied into a 32-bit register on the write of `timer_byte3` (atomic update); in the cycle of the `timer_byte3` write strobe the new value is used directly, so a reload right after the write already uses it.
 - Reload (priority): `control.clear or timer_clear_i or (control.autostart and done)`.
 - Decrement: `control.enable = 1`, `timer_disable_i = 0` and counter /= 0.
 - `done` = counter equals 0; it stops the decrement and triggers the auto-reload.

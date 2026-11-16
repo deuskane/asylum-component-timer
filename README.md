@@ -40,7 +40,7 @@
 
 **32-bit down-counter timer with CSR access over the SBI bus, auto-reload, external disable / clear inputs and an interrupt output.**
 
-VLNV: `asylum:component:timer:3.0.0`
+VLNV: `asylum:component:timer:4.0.0`
 
 ## Table of Contents
 
@@ -255,7 +255,7 @@ make clean                # remove build/ and log/
 Equivalent FuseSoC command:
 
 ```bash
-fusesoc --cores-root . run --build-root build --target sim_sbi_timer asylum:component:timer:3.0.0
+fusesoc --cores-root . run --build-root build --target sim_sbi_timer asylum:component:timer:4.0.0
 ```
 
 CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `sim_sbi_timer`.

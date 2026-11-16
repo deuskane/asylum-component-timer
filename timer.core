@@ -24,9 +24,13 @@ CAPI=2:
 #                               parameters section
 # 2026-11-15  3.0.0    mrosiere asylum:system:GIC >= 2.0.0 : isr records the event
 #                               whatever imr (polling), imr only masks it_o
+# 2026-11-16  4.0.0    mrosiere Interrupt event on the counter reaching 0 by a
+#                               decrement (no event while held at 0), initial
+#                               value updated at once on the write of
+#                               timer_byte3, bounded testbench waits
 #-----------------------------------------------------------------------------
 
-name        : asylum:component:timer:3.0.0
+name        : asylum:component:timer:4.0.0
 description : Timer
 
 #=========================================

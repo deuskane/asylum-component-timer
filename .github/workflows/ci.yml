@@ -67,4 +67,48 @@ jobs:
     with:
       name: sim_timer_reset_values
 
+  lint_ghdl:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl
+
+  lint_ghdl_synth_timer_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_timer_default
+
+  lint_ghdl_synth_timer_v1_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_timer_v1_default
+
+  lint_ghdl_synth_timer_v1_it:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_timer_v1_it
+
+  syn_timer_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_timer_default
+
+  syn_timer_v1_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_timer_v1_default
+
+  syn_timer_v1_it:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_timer_v1_it
+
+  badges:
+    needs: [sim_timer, sim_timer_async_reset, sim_timer_autoreload, sim_timer_borrow, sim_timer_disable, sim_timer_enable, sim_timer_init_atomic, sim_timer_init_zero, sim_timer_mask, sim_timer_one_shot, sim_timer_registers, sim_timer_reset_values, lint_ghdl, lint_ghdl_synth_timer_default, lint_ghdl_synth_timer_v1_default, lint_ghdl_synth_timer_v1_it, syn_timer_default, syn_timer_v1_default, syn_timer_v1_it]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: deuskane/asylum-ci/.github/workflows/badges.yml@main
+    with:
+      results: ${{ toJSON(needs) }}
+
 #<GENERATE_END>

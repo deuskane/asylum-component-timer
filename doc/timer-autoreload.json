@@ -1,0 +1,13 @@
+{ "signal": [
+  { "name": "clk_i",            "wave": "p..........." },
+  { "name": "control",          "wave": "45..........", "data": ["clear", "enable, autostart"] },
+  { "name": "timer_cnt_o",      "wave": "44===4===4==", "data": ["3", "3", "2", "1", "0", "3", "2", "1", "0", "3", "2", "1"] },
+  { "name": "event (internal)", "wave": "0...10..10..", "node": "....A...B..." },
+  { "name": "write 1 to isr",   "wave": "0......10..." },
+  { "name": "isr",              "wave": "0....1..01.." },
+  { "name": "it_o (imr = 1)",   "wave": "0....1..01.." }
+  ],
+  "edge": ["A<->B init + 1 = 4 cycles"],
+  "head": { "text": "Auto-reload, initial value 3" },
+  "config": { "hscale": 2 }
+}

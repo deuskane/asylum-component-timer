@@ -1,6 +1,21 @@
-default                 : Default Target
-lint_ghdl               : Lint with GHDL (-Wall analysis and elaboration of sbi_timer_wrapper)
-lint_ghdl_synth_default : Synthesis check of sbi_timer_wrapper, default generics
-lint_ghdl_synth_v1_it   : Synthesis check of sbi_timer_wrapper, timer_v1 with interrupt, tick 10
-sim_sbi_timer           : Simulation of sbi_timer with SBI VIP
+default                          : Default Target
+lint_ghdl                        : Lint with GHDL (-Wall analysis of sbi_timer_wrapper and timer_v1_wrapper, elaboration of sbi_timer_wrapper)
+lint_ghdl_synth_timer_default    : Synthesis check of sbi_timer_wrapper (sbi_timer has no generic)
+lint_ghdl_synth_timer_v1_default : Synthesis check of timer_v1_wrapper (legacy timer_v1), default generics (tick 1000)
+lint_ghdl_synth_timer_v1_it      : Synthesis check of timer_v1_wrapper (legacy timer_v1), with interrupt, tick 10
+sim_timer                        : Simulation of sbi_timer (UVVM) - build only (scenarios of TESTS_LIST)
+sim_timer_async_reset            : Simulation of sbi_timer (UVVM) - asynchronous reset while counting with an interrupt pending
+sim_timer_autoreload             : Simulation of sbi_timer (UVVM) - auto-reload, period init + 1, polling while masked, timer_clear_i reload
+sim_timer_borrow                 : Simulation of sbi_timer (UVVM) - 32-bit decrement, borrows across the bytes
+sim_timer_disable                : Simulation of sbi_timer (UVVM) - timer_disable_i freezes the counter
+sim_timer_enable                 : Simulation of sbi_timer (UVVM) - control.enable stops and restarts the count
+sim_timer_init_atomic            : Simulation of sbi_timer (UVVM) - initial value updated at once on the write of timer_byte3
+sim_timer_init_zero              : Simulation of sbi_timer (UVVM) - initial value 0, no interrupt event
+sim_timer_mask                   : Simulation of sbi_timer (UVVM) - isr records the event while masked (polling), imr only masks it_o
+sim_timer_one_shot               : Simulation of sbi_timer (UVVM) - one-shot count, exact cycles up to it_o, rw1c acknowledge, no event while held at 0
+sim_timer_registers              : Simulation of sbi_timer (UVVM) - read / write of the registers, counter follows the initial value while clear
+sim_timer_reset_values           : Simulation of sbi_timer (UVVM) - reset values of the registers, it_o and the counter
+syn_timer_default                : Synthesis (Artix-7, sky130) of sbi_timer_wrapper (sbi_timer has no generic)
+syn_timer_v1_default             : Synthesis (Artix-7, sky130) of timer_v1_wrapper (legacy timer_v1), default generics (tick 1000)
+syn_timer_v1_it                  : Synthesis (Artix-7, sky130) of timer_v1_wrapper (legacy timer_v1), with interrupt, tick 10
 

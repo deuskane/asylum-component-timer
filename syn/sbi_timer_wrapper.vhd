@@ -6,12 +6,12 @@
 -- Author     : Mathieu Rosiere
 -------------------------------------------------------------------------------
 -- Description:
--- Wrapper (lint_ghdl, lint_ghdl_synth_*) : sbi_timer with flat and
--- constrained ports (sbi_timer has unconstrained SBI ports and cannot be a
--- synthesis top), and the legacy timer_v1 (in the hdl fileset, not
--- instantiated by sbi_timer). SBI address / data width : SBI_ADDR_WIDTH /
+-- Wrapper (lint_ghdl, lint_ghdl_synth_timer_*, syn_timer_*) : sbi_timer
+-- with flat and constrained ports (sbi_timer has unconstrained SBI ports and
+-- cannot be a synthesis top). SBI address / data width : SBI_ADDR_WIDTH /
 -- SBI_DATA_WIDTH. sbi_timer has no generic but NAME (only in sbi_tgt.info,
--- not connected); the generics of timer_v1 are forwarded (V1_*).
+-- not connected). The legacy timer_v1 has its own wrapper
+-- (timer_v1_wrapper).
 -------------------------------------------------------------------------------
 -- Copyright (c) 2026
 -------------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 -- Date        Version  Author   Description
 -- 2026-10-20  1.0      mrosiere Created
 -- 2026-10-24  1.1      mrosiere Was sbi_timer_synth_top, library asylum
+-- 2026-11-20  1.2      mrosiere sbi_timer only, timer_v1 in timer_v1_wrapper
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -27,12 +28,6 @@ library asylum;
 use     asylum.sbi_pkg.all;
 
 entity sbi_timer_wrapper is
-  generic (
-    V1_TICK          : positive := 1000;
-    V1_SIZE_ADDR     : natural  := 3;
-    V1_SIZE_DATA     : natural  := 8;
-    V1_IT_ENABLE     : boolean  := false
-  );
   port (
     clk_i            : in  std_logic;
     arst_b_i         : in  std_logic;
@@ -50,19 +45,7 @@ entity sbi_timer_wrapper is
     timer_disable_i  : in  std_logic;
     timer_clear_i    : in  std_logic;
     timer_cnt_o      : out std_logic_vector(31 downto 0);
-    it_o             : out std_logic;
-
-    -- timer_v1
-    v1_cke_i         : in  std_logic;
-    v1_cs_i          : in  std_logic;
-    v1_re_i          : in  std_logic;
-    v1_we_i          : in  std_logic;
-    v1_addr_i        : in  std_logic_vector(V1_SIZE_ADDR-1 downto 0);
-    v1_wdata_i       : in  std_logic_vector(V1_SIZE_DATA-1 downto 0);
-    v1_rdata_o       : out std_logic_vector(V1_SIZE_DATA-1 downto 0);
-    v1_busy_o        : out std_logic;
-    v1_interrupt_o   : out std_logic;
-    v1_interrupt_ack_i : in std_logic
+    it_o             : out std_logic
   );
 end entity sbi_timer_wrapper;
 
@@ -92,28 +75,6 @@ begin
       timer_clear_i   => timer_clear_i,
       timer_cnt_o     => timer_cnt_o,
       it_o            => it_o
-    );
-
-  ins_timer_v1 : entity asylum.timer_v1
-    generic map (
-      TICK            => V1_TICK,
-      SIZE_ADDR       => V1_SIZE_ADDR,
-      SIZE_DATA       => V1_SIZE_DATA,
-      IT_ENABLE       => V1_IT_ENABLE
-    )
-    port map (
-      clk_i           => clk_i,
-      cke_i           => v1_cke_i,
-      arstn_i         => arst_b_i,
-      cs_i            => v1_cs_i,
-      re_i            => v1_re_i,
-      we_i            => v1_we_i,
-      addr_i          => v1_addr_i,
-      wdata_i         => v1_wdata_i,
-      rdata_o         => v1_rdata_o,
-      busy_o          => v1_busy_o,
-      interrupt_o     => v1_interrupt_o,
-      interrupt_ack_i => v1_interrupt_ack_i
     );
 
 end architecture rtl;

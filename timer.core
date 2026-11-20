@@ -97,11 +97,19 @@ filesets:
   #---------------------------------------
     files        :
       - syn/sbi_timer_wrapper.vhd
+      - syn/timer_v1_wrapper.vhd
     file_type    : vhdlSource-2008
     logical_name : asylum
     # ghdl_synth.sh / ghdl_synth.mk (pre_run hook of lint_ghdl_synth_*)
     depend       :
       - asylum:utils:ghdl_synth
+
+  #---------------------------------------
+  syn_yosys:
+  #---------------------------------------
+    # yosys_synth.sh / yosys_synth.mk / yosys_synth.py (pre_run hook of syn_*)
+    depend       :
+      - asylum:utils:yosys_synth
 
 #=========================================
 targets:
@@ -119,11 +127,12 @@ targets:
       - gen_csr
 
   #---------------------------------------
-  # Lint : -Wall analysis and elaboration (empty simulation)
+  # Lint : -Wall analysis of both wrappers, elaboration (empty
+  # simulation) of sbi_timer_wrapper
   #---------------------------------------
   lint_ghdl : &lint_ghdl
     << : *default
-    description     : Lint with GHDL (-Wall analysis and elaboration of sbi_timer_wrapper)
+    description     : Lint with GHDL (-Wall analysis of sbi_timer_wrapper and timer_v1_wrapper, elaboration of sbi_timer_wrapper)
     toplevel        : asylum.sbi_timer_wrapper
     filesets_append : [syn]
     default_tool    : ghdl
@@ -133,14 +142,16 @@ targets:
 
   #---------------------------------------
   # Synthesis check : -Wall analysis, ghdl --synth -Wall and elaboration
-  # (no simulation) of sbi_timer_wrapper with the generics of the target.
+  # (no simulation) of the wrapper of a variant (sbi_timer_wrapper :
+  # lint_ghdl_synth_timer_*, timer_v1_wrapper : lint_ghdl_synth_timer_v1_*)
+  # with the generics of the target.
   # The pre_run hook (ghdl_synth.sh of asylum:utils:ghdl_synth) adds
   # ghdl_synth.mk to the edalize Makefile.
   # FuseSoC merges tools in depth : analyze_options comes from lint_ghdl.
   #---------------------------------------
-  lint_ghdl_synth_default : &lint_ghdl_synth
+  lint_ghdl_synth_timer_default : &lint_ghdl_synth
     << : *lint_ghdl
-    description     : Synthesis check of sbi_timer_wrapper, default generics
+    description     : Synthesis check of sbi_timer_wrapper (sbi_timer has no generic)
     tools :
       ghdl :
         run_options     : ["--no-run"]
@@ -148,10 +159,50 @@ targets:
       pre_run : [ghdl_synth]
 
   #---------------------------------------
-  lint_ghdl_synth_v1_it :
+  lint_ghdl_synth_timer_v1_default : &lint_ghdl_synth_v1
   #---------------------------------------
     << : *lint_ghdl_synth
-    description     : Synthesis check of sbi_timer_wrapper, timer_v1 with interrupt, tick 10
+    description     : Synthesis check of timer_v1_wrapper (legacy timer_v1), default generics (tick 1000)
+    toplevel        : asylum.timer_v1_wrapper
+
+  #---------------------------------------
+  lint_ghdl_synth_timer_v1_it :
+  #---------------------------------------
+    << : *lint_ghdl_synth_v1
+    description     : Synthesis check of timer_v1_wrapper (legacy timer_v1), with interrupt, tick 10
+    parameters      :
+      - V1_IT_ENABLE=true
+      - V1_TICK=10
+
+  #---------------------------------------
+  # Synthesis : size of the wrapper of a variant with the generics of the
+  # target, Xilinx Artix-7 (LUT, FF, BRAM, DSP) and sky130 (area), by Yosys
+  # and its GHDL plugin. Same configurations as lint_ghdl_synth_*.
+  # The pre_run hook (yosys_synth.sh of asylum:utils:yosys_synth) adds
+  # yosys_synth.mk to the edalize Makefile.
+  #---------------------------------------
+  syn_timer_default : &syn
+    << : *lint_ghdl
+    description     : Synthesis (Artix-7, sky130) of sbi_timer_wrapper (sbi_timer has no generic)
+    filesets_append : [syn, syn_yosys]
+    tools :
+      ghdl :
+        run_options     : ["--no-run"]
+    hooks :
+      pre_run : [yosys_synth]
+
+  #---------------------------------------
+  syn_timer_v1_default : &syn_v1
+  #---------------------------------------
+    << : *syn
+    description     : Synthesis (Artix-7, sky130) of timer_v1_wrapper (legacy timer_v1), default generics (tick 1000)
+    toplevel        : asylum.timer_v1_wrapper
+
+  #---------------------------------------
+  syn_timer_v1_it :
+  #---------------------------------------
+    << : *syn_v1
+    description     : Synthesis (Artix-7, sky130) of timer_v1_wrapper (legacy timer_v1), with interrupt, tick 10
     parameters      :
       - V1_IT_ENABLE=true
       - V1_TICK=10
@@ -279,6 +330,12 @@ scripts:
   ghdl_synth :
     cmd : [bash, ghdl_synth.sh]
 
+  #---------------------------------------
+  # pre_run hook of syn_* (cwd = work_root)
+  #---------------------------------------
+  yosys_synth :
+    cmd : [bash, yosys_synth.sh]
+
 #=========================================
 parameters :
 #=========================================
@@ -293,7 +350,7 @@ parameters :
     paramtype   : generic
 
   #---------------------------------------
-  # Generics of sbi_timer_wrapper (lint_ghdl_synth_*)
+  # Generics of timer_v1_wrapper (lint_ghdl_synth_timer_v1_*, syn_timer_v1_*)
   #---------------------------------------
   V1_TICK :
     description : timer_v1, tick period (clock cycles)

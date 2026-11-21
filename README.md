@@ -196,11 +196,11 @@ Figures of the `syn_*` targets (`make nonreg_syn`, see [Targets](#targets)): one
 
 | Configuration | LUT¹ | LUTRAM¹ | FF¹ | CARRY4¹ | MUXF7/F8¹ | BRAM¹ | DSP¹ | Area² (µm²) | kGE³ |
 |---|---|---|---|---|---|---|---|---|---|
-| `syn_timer_default` (`sbi_timer`) | 298 | 0 | 103 | 8 | 111 | 0 | 0 | 4386.71 | 1.169 |
-| `syn_timer_v1_default` (`timer_v1`, tick 1000) | 197 | 0 | 80 | 11 | 14 | 0 | 0 | 3915.00 | 1.043 |
-| `syn_timer_v1_it` (`timer_v1`, tick 10, `IT_ENABLE`) | 189 | 0 | 74 | 9 | 7 | 0 | 0 | 3643.49 | 0.971 |
+| `syn_timer_default` (`sbi_timer`) | 196 | 0 | 103 | 8 | 111 | 0 | 0 | 4386.71 | 1.169 |
+| `syn_timer_v1_default` (`timer_v1`, tick 1000) | 119 | 0 | 80 | 11 | 14 | 0 | 0 | 3915.00 | 1.043 |
+| `syn_timer_v1_it` (`timer_v1`, tick 10, `IT_ENABLE`) | 117 | 0 | 74 | 9 | 7 | 0 | 0 | 3643.49 | 0.971 |
 
-¹ Xilinx Artix-7 (LUT6), Yosys 0.33 `synth_xilinx -flatten -noiopad -noclkbuf`, before place and route: every cell of the netlist is counted, Vivado may differ. An `INV` counts as a `LUT1` (102 `INV` in the 298 LUTs of `syn_timer_default`): `synth_xilinx` puts one on the reset pin of each flip-flop with the active-low reset. The IP has no memory: no LUTRAM, no BRAM. Flip-flops of `sbi_timer`: 38 in the register bank (`timer_byte0..3`, `control`, `isr`, `imr`, write strobe of `timer_byte3`), 32 for `timer_init_r`, 32 for the counter (without reset), 1 for the decrement flag.
+¹ Xilinx Artix-7 (LUT6), Yosys 0.33 `synth_xilinx -flatten -noiopad -noclkbuf`, before place and route: every cell of the netlist is counted, Vivado may differ. Identical cells are merged as a vendor tool does (`opt_merge -share_all`): the inverters of an active-low reset net become one; every remaining cell is counted, an `INV` as a `LUT1` (32 `INV` in the 196 LUTs of `syn_timer_default`). The IP has no memory: no LUTRAM, no BRAM. Flip-flops of `sbi_timer`: 38 in the register bank (`timer_byte0..3`, `control`, `isr`, `imr`, write strobe of `timer_byte3`), 32 for `timer_init_r`, 32 for the counter (without reset), 1 for the decrement flag.
 
 ² SkyWater sky130 `sky130_fd_sc_hd`, typical corner (tt, 25 °C, 1.80 V), Yosys 0.33 `synth` + `dfflibmap` + `abc -liberty`: standard-cell area only, no timing constraint, no buffering, clock tree or placement.
 
